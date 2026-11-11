@@ -1,6 +1,6 @@
 # Roadmap
 
-Next: push this repo to a private GitHub repository. Everything below depends on it.
+The repo is public at https://github.com/justin-newman/gh500-course. Next: host it (Phase 1).
 
 ## Where the PoC stands
 
@@ -14,12 +14,13 @@ Next: push this repo to a private GitHub repository. Everything below depends on
 
 ## Phase 1: host it (about 1 day)
 
-1. Push to a private GitHub repo.
-2. Deploy `dist/gh-500/index.html` to a static host (Azure Static Web Apps, Cloudflare Pages or GitHub Pages).
-3. Add a tiny API (one serverless function) with two routes: `POST /progress` and `POST /feedback`.
-4. Swap the browser-only adapters in `src/app.js` (`connect`, `flushFeedback`) for calls to that API.
+1. Deploy `dist/gh-500/index.html` to a static host (Azure Static Web Apps, Cloudflare Pages or GitHub Pages).
+2. Add a tiny API (one serverless function) with two routes: `POST /progress` and `POST /feedback`.
+3. Swap the browser-only adapters in `src/app.js` (`connect`, `flushFeedback`) for calls to that API.
 
-## Phase 2: sell access (about 3 to 5 days)
+## Phase 2: sell access (about 3 to 5 days, later)
+
+Parked for now. When it starts, decide how to handle the content already public in this repo: keep the GH-500 bank free, or put new and paid content in a private repo.
 
 1. Add sign-in (Entra External ID, Auth0 or Clerk).
 2. Add checkout (Stripe Checkout) and store an entitlement per user per course.
