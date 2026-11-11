@@ -90,7 +90,7 @@ These are guidelines and only print warnings: at most 5 key points per lesson, a
 
 ## Roadmap
 
-Planned work is in [`docs/ROADMAP.md`](docs/ROADMAP.md): hosting the course, a small API for progress and question reports, a self-healing question pipeline ([`docs/SELF-HEALING.md`](docs/SELF-HEALING.md)), and more courses on the same engine.
+Planned work is in [`docs/ROADMAP.md`](docs/ROADMAP.md) and the [roadmap issues](https://github.com/justin-newman/gh500-course/issues?q=is%3Aissue+label%3Aroadmap): hosting the course, research into how to make studying easier, research into where the correct information comes from and how to keep it current, a self-healing question pipeline ([`docs/SELF-HEALING.md`](docs/SELF-HEALING.md)), and more courses on the same engine.
 
 ## License
 
