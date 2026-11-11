@@ -1,0 +1,227 @@
+[
+  { "id": "l-rollout", "domain": "d6", "objectives": ["d6-0-0", "d6-1-0", "d6-1-1"],
+    "title": "Roll out with security configurations", "minutes": 10,
+    "goal": "Apply security features to many repos at once and keep them on.",
+    "points": [
+      "**Org:** Settings > Advanced Security > Configurations > New configuration. Pick features, then Apply configuration to repos. Current docs describe custom configurations only; the older GitHub-recommended configuration pages were retired.",
+      "**Use as default for newly created repositories:** None (default), Public, Private and internal, or All. Only new repos get it; transferred repos need it applied.",
+      "**Enforce** blocks repo-level changes to the configured settings. Features left unset in the configuration are never enforced.",
+      "**Enterprise** configurations can enforce for repository owners, or for repository and organization owners.",
+      "REST: `POST /orgs/{org}/code-security/configurations` creates one; add `/{configuration_id}/attach` to apply it (scope all, all_without_configurations, public, private_or_internal, selected) or `/{configuration_id}/defaults` to set it as a default."
+    ],
+    "trap": "A repo transferred into the org doesn't get the default configuration automatically.",
+    "tryIt": "Run `gh api /orgs/ORG/code-security/configurations` for an org you belong to.",
+    "details": [
+      { "title": "What a configuration can hold", "table": { "head": ["Section", "Settings"], "rows": [
+        ["Dependency scanning", "Dependency graph (dependency review follows when Code Security is on), Automatic dependency submission, Dependabot alerts, Security updates, Malware alerts"],
+        ["Code scanning", "Default setup (including Enabled with advanced setup allowed, GHES 3.19+, which skips repos already running CodeQL), Runner type, Prevent direct alert dismissals"],
+        ["Secret scanning", "Validity checks, Extended metadata (needs validity checks), Generic patterns, Scan for AI-detected secrets, Push protection, Bypass privileges, Prevent direct alert dismissals"],
+        ["Reporting", "Private vulnerability reporting"],
+        ["Policy", "Use as default for newly created repositories; Enforce configuration"]
+      ] } },
+      { "title": "Statuses you'll see on the Repositories tab", "table": { "head": ["Status", "Meaning"], "rows": [
+        ["Attached", "Applied and matching"],
+        ["Attaching, Updating", "In progress"],
+        ["Enforced", "Applied and locked against repo-level changes"],
+        ["Failed", "A setting conflicts with the repo (for example Actions disabled); filter with `config-status:failed`"],
+        ["Removed", "A repo-level change conflicted with an unenforced configuration"],
+        ["Removed by enterprise", "An enterprise configuration replaced it"],
+        ["Detached (shown as No configuration)", "No configuration applies"]
+      ] } },
+      { "title": "Enforcement, in practice", "points": [
+        "Enforced settings can't be changed at repo level. A REST call against an enforced feature \"will appear to succeed, but no enablement statuses will change\".",
+        "Enforcement of code scanning breaks if GitHub Actions is later disabled or unavailable in the repo.",
+        "Enterprise options: Don't enforce, Enforce for repository owners, Enforce for repository and organization owners.",
+        "Who can apply: org owners, security managers and admins. REST attach needs org admin or security manager; detach takes up to 250 repository ids; default scopes are all, none, private_and_internal, public."
+      ] },
+      { "title": "The legacy ways, and licensing effects", "points": [
+        "Older org-level toggles (module 7): Settings > Code security and analysis > Enable all next to GitHub Advanced Security, disabled when no seats are free, plus \"Automatically enable for new private and internal repositories\".",
+        "REST `POST /orgs/{org}/{security_product}/{enablement}`: products are dependency_graph, dependabot_alerts, dependabot_security_updates, advanced_security, code_scanning_default_setup, secret_scanning and secret_scanning_push_protection.",
+        "Its enablement value is enable_all or disable_all; 204 means Action started, 422 means it couldn't. The endpoint is marked closing down; configurations replace it.",
+        "Enterprise: Policies > Advanced Security chooses which orgs may use the products; disallowing an org stops new enablement but doesn't disable repos already using it. Enterprise-level Dependabot alert settings override org and repo settings.",
+        "When licenses run out, new repos get the products disabled and nothing new can be enabled. One license per unique active committer across the enterprise."
+      ] }
+    ],
+    "lab": "lab-sec-config",
+    "sources": ["https://docs.github.com/en/code-security/how-tos/secure-at-scale/configure-organization-security/establish-complete-coverage/create-custom-configuration", "https://docs.github.com/en/code-security/how-tos/secure-at-scale/configure-organization-security/establish-complete-coverage/apply-custom-configuration", "https://docs.github.com/en/code-security/reference/security-at-scale/configuration-statuses", "https://docs.github.com/en/code-security/reference/security-at-scale/configuration-enforcement", "https://docs.github.com/en/enterprise-cloud@latest/code-security/how-tos/secure-at-scale/configure-organization-security/establish-complete-coverage/create-custom-configuration","https://docs.github.com/en/rest/code-security/configurations", "https://docs.github.com/en/rest/orgs/orgs", "https://learn.microsoft.com/en-us/training/modules/github-administration-github-advanced-security/3-enable-github-advanced-security"] },
+
+  { "id": "l-roles", "domain": "d6", "objectives": ["d6-2-1", "d6-2-2", "d6-2-3"],
+    "title": "Roles and permissions for security", "minutes": 10,
+    "goal": "Give each person the least access that lets them do their security job.",
+    "points": [
+      "**Security manager** (org): read on every repo, write on all security alerts, and manage security settings at org and repo level, including enabling the products. Assign it to a team or a member.",
+      "Only **owners and security managers** manage security and analysis settings, view security overview, get org-wide Dependabot alerts and review bypass and dismissal requests. The org audit log is owners only.",
+      "**Custom repo roles** (Enterprise Cloud, up to 20 per org) add permissions such as View secret scanning alerts or Dismiss or reopen code scanning alerts to a base role of Read, Triage, Write or Maintain, never Admin.",
+      "**Exceptions:** bypass lists on rulesets and push protection, and exemptions for service accounts. Custom org roles can hold the review permissions for bypass and dismissal requests.",
+      "Developers usually get write: they fix and dismiss alerts. Security owns policy and approvals. Admins enable features and manage access."
+    ],
+    "trap": "Security manager doesn't grant admin on repos. It's read, plus alerts, plus security settings.",
+    "tryIt": "List three people on your team and the security role each should have.",
+    "details": [
+      { "title": "Predefined organization roles", "table": { "head": ["Can do", "Owner", "Security manager", "Member"], "rows": [
+        ["Manage security and analysis settings; enable GHAS", "Yes", "Yes", "No"],
+        ["View security overview", "Yes", "Yes", "No (only what their repo roles allow)"],
+        ["Receive org-wide Dependabot alerts", "Yes", "Yes", "No"],
+        ["Review push protection bypass and alert dismissal requests", "Yes", "Yes", "No"],
+        ["Access the organization audit log", "Yes", "No", "No"],
+        ["Write access on every security alert; read on every repo", "Yes", "Yes", "No"]
+      ] } },
+      { "title": "Repository roles for security", "table": { "head": ["Minimum role", "Can do"], "rows": [
+        ["Read, Triage", "View code scanning alerts on pull requests; view rulesets"],
+        ["Write, Maintain", "List, dismiss and delete code scanning alerts; dismiss Dependabot alerts; view and dismiss secret scanning alerts on their own commits (no alert list)"],
+        ["Admin", "Create security advisories; manage access to Advanced Security features; enable the dependency graph on private repos; manage rulesets and webhooks; see the secret alert list and token metadata"]
+      ] } },
+      { "title": "Custom roles", "points": [
+        "Custom repository roles: Enterprise Cloud only, up to 20 per org (5 on GHES before 3.19), built on a base role of Read, Triage, Write or Maintain.",
+        "Their security permissions: View code scanning alerts; Dismiss or reopen code scanning alerts; Delete code scanning alerts; View Dependabot alerts; Dismiss or reopen Dependabot alerts; View secret scanning alerts; Dismiss, reopen, or assign secret scanning alerts.",
+        "Custom organization roles: up to 20 (10 on GHES before 3.19). Security permissions: Review and manage secret scanning bypass requests; Review and manage secret scanning alert dismissal requests; Review, Bypass and View code scanning and Dependabot dismissal requests; View organization audit log.",
+        "\"Manage custom organization roles\" lets someone create roles, not assign them.",
+        "The old `/orgs/{org}/security-managers` REST endpoints are closing down (removal from January 2026); use the Organization Roles endpoints to assign security manager by API."
+      ] },
+      { "title": "Enterprise roles", "points": [
+        "Enterprise owner: full control, including Policies > Advanced Security and the enterprise audit log and streaming.",
+        "**Enterprise security manager** (Enterprise Cloud, public preview): views, manages and assigns configurations at enterprise and org level, sees alerts and campaigns, manages repo security settings; read on all code, write on all alerts.",
+        "Billing manager and guest collaborator roles exist too; neither manages security."
+      ] },
+      { "title": "Who grants what", "points": [
+        "Org owners assign security manager (team or member). Repo admins grant alert access to teams or people with write. Enterprise owners set which orgs may use the products and whether repo admins can toggle them.",
+        "Developers: fix and dismiss within their repos. Security engineers: triage, policy, approvals, campaigns. Admins: enable, configure, audit; they don't fix code."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/permissions-of-predefined-organization-roles", "https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/managing-security-managers-in-your-organization", "https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/repository-roles-for-an-organization", "https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/about-custom-repository-roles", "https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-peoples-access-to-your-organization-with-roles/permissions-of-custom-organization-roles", "https://docs.github.com/en/enterprise-cloud@latest/admin/managing-accounts-and-repositories/managing-roles-in-your-enterprise/abilities-of-roles"] },
+
+  { "id": "l-ghes", "domain": "d6", "objectives": ["d6-0-1"],
+    "title": "Enterprise Cloud vs Enterprise Server", "minutes": 10,
+    "goal": "Know what changes when security features run on GitHub Enterprise Server.",
+    "points": [
+      "**Enable on GHES:** upload a license that includes the products (check Enterprise settings > Settings > License), then Site admin > Management Console > Settings > Security, tick features, Save settings. User-facing services restart.",
+      "**Dependabot alerts on GHES** need GitHub Connect and the dependency graph; only reviewed advisories sync, hourly. Dependabot updates need Actions with dedicated self-hosted runners.",
+      "**CodeQL on GHES:** the action ships with the server (3.22 ships CodeQL 2.25.6) and fetches the bundle itself when online. Offline servers use `codeql-action-sync-tool`.",
+      "Features reach GHES later and are tagged by version: delegated dismissal 3.17, Dependabot dismissal delegation 3.21, malware alerts and 180-day inactive scans 3.22.",
+      "GitHub.com only: push protection for users, Dependabot graph jobs, and (per the 3.22 docs) Copilot Autofix and campaigns."
+    ],
+    "trap": "No GitHub Connect, no Dependabot alerts on GHES.",
+    "tryIt": "Say which screen a GHES site admin uses to turn on Secret Protection.",
+    "details": [
+      { "title": "Enabling from the admin shell", "snippet": { "label": "ssh -p 122 admin@HOSTNAME", "code": "ghe-config app.minio.enabled true\nghe-config app.code-scanning.enabled true\nghe-config app.secret-scanning.enabled true\nghe-config app.dependency-graph.enabled true\nghe-config app.secret-scanning.validity-checks-available-on-instance true\nghe-secret-scanning-validity-checks-connection-test\nghe-config-apply" },
+        "points": ["The Management Console does the same with checkboxes. Either way, `ghe-config-apply` (or Save settings) restarts user-facing services."] },
+      { "title": "GitHub Connect", "points": [
+        "Features: license sync, Dependabot alerts (advisory data), Dependabot updates, GitHub.com actions, Server Statistics, unified search and contributions. \"No repositories, issues, or pull requests are ever transmitted.\"",
+        "Advisory sync runs once every hour and carries only GitHub-reviewed advisories. GitHub Connect > Dependabot offers Enabled without notifications or Enabled with notifications.",
+        "Dependabot updates on GHES need TLS, Actions with dedicated self-hosted runners (a specific label), and aren't supported if the enterprise uses clustering.",
+        "GitHub Connect needs an enterprise owner who also owns the connected GitHub.com org or enterprise (module 2). Metered billing for the products flows through Connect to Enterprise Cloud (3.13+)."
+      ] },
+      { "title": "Version gates", "table": { "head": ["GHES", "What arrived"], "rows": [
+        ["3.17", "Delegated alert dismissal for code scanning and secret scanning"],
+        ["3.18", "CodeQL analysis of Actions workflows (GA); secret risk assessment"],
+        ["3.19", "Delegated code scanning dismissal GA; default vs advanced choice in configurations; push protection pattern selection; wiki secret scanning; custom role limit 20; yearly Dependabot interval; CodeQL 2.22.4"],
+        ["3.20", "Validity checks via the Management Console; secret scanning assignees; enterprise-level delegated bypass; Enterprise Security Manager role (preview); CodeQL 2.23.9"],
+        ["3.21", "Dependabot delegated dismissal GA; push protection exemptions for roles, teams and apps; Dependabot assignees; OIDC for private registries; CodeQL 2.24.3"],
+        ["3.22", "Dependabot malware alerts; push protection exemptions for automation; incremental CodeQL PR analysis; 180-day inactive repo scans; GHAS setup wizard; enterprise disable-GHAS switch; CodeQL 2.25.6"]
+      ] } },
+      { "title": "Other differences", "points": [
+        "Runners for CodeQL on GHES need Git on the PATH and Python 3 for Python analysis.",
+        "Custom repository roles: 5 per org before 3.19, 20 after. Custom org roles: 10 before 3.19, 20 after.",
+        "Dependency review on GHES: available once the dependency graph is on and the repo has Code Security; the license inputs of the action aren't supported.",
+        "Secret scanning on GHES needs the products in the license; validity checks need the connection test above."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/enterprise-server@3.22/code-security/how-tos/secure-at-scale/configure-enterprise-security/establish-complete-coverage/enabling-github-advanced-security-for-your-enterprise", "https://docs.github.com/en/enterprise-server@3.22/code-security/how-tos/secure-at-scale/configure-enterprise-security/configure-specific-tools/configuring-code-scanning-for-your-appliance", "https://docs.github.com/en/enterprise-server@3.22/admin/configuring-settings/configuring-github-connect/about-github-connect", "https://docs.github.com/en/enterprise-server@3.22/admin/configuring-settings/configuring-github-connect/enabling-dependabot-for-your-enterprise", "https://docs.github.com/en/enterprise-server@3.22/admin/release-notes", "https://docs.github.com/en/enterprise-server@3.21/admin/release-notes", "https://docs.github.com/en/enterprise-server@3.19/admin/release-notes"] },
+
+  { "id": "l-automation", "domain": "d6", "objectives": ["d6-3-0", "d6-3-1"],
+    "title": "APIs and approved workflows", "minutes": 10,
+    "goal": "Automate security setup and alert handling across many repos.",
+    "points": [
+      "Default setup at scale comes from security configurations and their REST API. Approved custom CodeQL workflows are shared as org **workflow templates** in the `.github` repo.",
+      "Enable features on one repo with `PATCH /repos/{owner}/{repo}` and a `security_and_analysis` object; Dependabot alerts and security updates have their own `PUT` endpoints.",
+      "REST has alert endpoints for code scanning, secret scanning and Dependabot at repo and org level. Dismiss with `dismissed_reason` (code scanning, Dependabot) or resolve with `resolution` (secret scanning).",
+      "Webhooks: `code_scanning_alert`, `secret_scanning_alert`, `dependabot_alert`, and `security_and_analysis` when a feature is toggled.",
+      "Use `gh api` for quick scripts and a GitHub App for long-running automation."
+    ],
+    "trap": "Asked which webhook fires for new Dependabot alerts? `dependabot_alert`.",
+    "tryIt": "Run `gh api \"/repos/OWNER/REPO/code-scanning/alerts?state=open\"` on a repo you own.",
+    "details": [
+      { "title": "Enabling features by API", "points": [
+        "`PATCH /repos/{owner}/{repo}` with a `security_and_analysis` object whose sub-objects are `advanced_security`, `code_security`, `secret_scanning`, `secret_scanning_push_protection`, `secret_scanning_ai_detection` and `secret_scanning_non_provider_patterns`.",
+        "Two more sub-objects: `secret_scanning_delegated_alert_dismissal` and `secret_scanning_delegated_bypass`. Each takes `{\"status\": \"enabled\"}` or `disabled`. The caller needs repo admin, org owner or security manager.",
+        "Dependabot alerts: `PUT /repos/{owner}/{repo}/vulnerability-alerts`. Security updates: `PUT /repos/{owner}/{repo}/automated-security-fixes`.",
+        "Org-wide (closing down): `POST /orgs/{org}/{security_product}/{enablement}` with `enable_all` or `disable_all` and an optional `query_suite` (default, extended); 204 means started. Configurations replace it.",
+        "Configurations: `POST /orgs/{org}/code-security/configurations`, then `/{configuration_id}/attach` (`scope` all, all_without_configurations, public, private_or_internal, selected), `/{configuration_id}/defaults`, and `/detach` (up to 250 ids).",
+        "Default setup for one repo: `PATCH /repos/{owner}/{repo}/code-scanning/default-setup` with `state`, `query_suite`, `runner_type`, `threat_model` and `languages`."
+      ] },
+      { "title": "Alert endpoints", "table": { "head": ["Family", "Calls and values"], "rows": [
+        ["Code scanning", "`GET /orgs/{org}/code-scanning/alerts`; `GET` and `PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}` with `state` open or dismissed, `dismissed_reason` (`false positive`, `won't fix`, `used in tests`, `mitigated`), `dismissed_comment` (280), `assignees`; `POST /repos/{owner}/{repo}/code-scanning/sarifs`"],
+        ["Secret scanning", "`GET /orgs/{org}/secret-scanning/alerts`; `GET` and `PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}` with `state` open or resolved and `resolution` (`false_positive`, `wont_fix`, `revoked`, `used_in_tests`); `/locations`; `POST /repos/{owner}/{repo}/secret-scanning/push-protection-bypasses`"],
+        ["Dependabot", "`GET /enterprises/{enterprise}/dependabot/alerts`, `GET /orgs/{org}/dependabot/alerts`, `GET /repos/{owner}/{repo}/dependabot/alerts`; `PATCH` with `dismissed_reason` (`fix_started`, `inaccurate`, `no_bandwidth`, `not_used`, `tolerable_risk`), `dismissed_comment` (280), `assignees`"]
+      ] } },
+      { "title": "Webhook events and actions", "table": { "head": ["Event", "Actions"], "rows": [
+        ["`code_scanning_alert` (needs Code scanning alerts: read)", "appeared_in_branch, closed_by_user, created, fixed, reopened, reopened_by_user, updated_assignment"],
+        ["`secret_scanning_alert`", "assigned, created, metadata_created, metadata_removed, publicly_leaked, reopened, resolved, unassigned, validated"],
+        ["`dependabot_alert`", "assignees_changed, auto_dismissed, auto_reopened, created, dismissed, fixed, reintroduced, reopened, withdrawn"],
+        ["`security_and_analysis`", "Fires when a feature is turned on or off"]
+      ] } },
+      { "title": "Workflow templates and tokens", "points": [
+        "Org workflow templates: in the `.github` repository under `workflow-templates/`, a `NAME.yml` plus `NAME.properties.json` (`name` and `description` required; `iconName`, `categories`, `filePatterns` optional). `$default-branch` is substituted when a repo adopts it.",
+        "`GITHUB_TOKEN` permissions (module 7): the permissive default is read and write; restricted is none except `contents` and `metadata` read; a `permissions:` block sets unlisted scopes to none (metadata stays read); forks get read at most unless \"Send write tokens to workflows from pull requests\" is on.",
+        "Rate limits: 5,000 requests per hour per user (15,000 for Enterprise Cloud apps); `GITHUB_TOKEN` 1,000 per hour per repo (15,000 Enterprise Cloud); unauthenticated 60; SARIF uploads 1,000 per hour. Check with `GET /rate_limit`.",
+        "Headers: `Accept: application/vnd.github+json` and `X-GitHub-Api-Version: 2022-11-28`. Token types (module 8): personal access, installation, OAuth, device, refresh. Prefer GitHub Apps for org integrations."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 7's endpoint map: the Code scanning API covers alerts, org reports and offline uploads; secret scanning is enabled through the Repositories API and read through the Secret Scanning API; dependencies through the Repositories API plus GraphQL.",
+        "Module 4's curl example lists `/orgs/ORG/code-scanning/alerts` with the two headers above."
+      ] }
+    ],
+    "lab": "lab-api",
+    "sources": ["https://docs.github.com/en/rest/repos/repos", "https://docs.github.com/en/rest/orgs/orgs", "https://docs.github.com/en/rest/code-security/configurations", "https://docs.github.com/en/rest/code-scanning/code-scanning", "https://docs.github.com/en/rest/secret-scanning/secret-scanning", "https://docs.github.com/en/rest/dependabot/alerts", "https://docs.github.com/en/webhooks/webhook-events-and-payloads", "https://docs.github.com/en/actions/how-tos/reuse-automations/create-workflow-templates", "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api"] },
+
+  { "id": "l-audit-log", "domain": "d6", "objectives": ["d6-3-1", "d1-2-3", "d3-3-2"],
+    "title": "Audit log, notifications and reporting", "minutes": 9,
+    "goal": "Find who changed a security setting or dismissed an alert, and route alerts to the right people.",
+    "points": [
+      "The **audit log** records every action with the actor, the repository, the action name (`category.operation`), the country and the time. Only organization owners open it, under Settings > Archive > Logs > Audit log.",
+      "Search with qualifiers, not free text: `action:`, `actor:`, `repo:`, `created:`, `country:`, `operation:` (access, authentication, create, modify, remove, restore, transfer). Example: `action:secret_scanning_push_protection created:2026-10-01..2026-10-18`.",
+      "The UI keeps **180 days** (3 months shown by default). Export as CSV or JSON. Enterprise Cloud adds REST (`GET /orgs/{org}/audit-log`, `GET /enterprises/{enterprise}/audit-log`) and GraphQL access.",
+      "**Audit log streaming** (enterprise) sends events to Amazon S3, Azure Blob Storage, Azure Event Hubs, Datadog, Google Cloud Storage or Splunk.",
+      "**Alert notifications** reach people who watch the repo and have security alerts on: email, web inbox, GitHub Mobile, and a CLI message on push. Commit authors are always told about their own leaks found by incremental scans."
+    ],
+    "trap": "Git events (pushes, clones) are kept for only 7 days in the API and aren't in the org UI at all. If a question asks who pushed last month, the audit log can't answer it.",
+    "tryIt": "Open your org's audit log and search `action:repository_secret_scanning`.",
+    "details": [
+      { "title": "Security events worth recognizing", "table": { "head": ["Category", "Example actions"], "rows": [
+        ["Secret scanning alerts", "`secret_scanning_alert.create`, `.resolve`, `.reopen`, `.assign`, `.unassign`, `.validate`; `secret_scanning_closure_request.approve`, `.deny`; `secret_scanning_scan.completed`"],
+        ["Push protection", "`secret_scanning_push_protection.bypass`; `secret_scanning_push_protection_request.request`, `.approve`, `.deny`, `.cancel`; `repository_secret_scanning_push_protection.enable`; `repository_secret_scanning_push_protection_bypass_list.add`"],
+        ["Custom patterns", "`repository_secret_scanning_custom_pattern.create`, `.update`, `.delete`, `.publish` and the `org_` equivalents"],
+        ["Code scanning", "`code_scanning.alert_created`, `alert_closed_by_user`, `alert_reopened_by_user`, `alert_reappeared`, `alert_closed_became_fixed`, `alert_closed_became_outdated`, `alert_closure_requested`, `alert_closure_approved`, `alert_closure_denied`; `repo.codeql_enabled`; `org.code_scanning_autofix_enabled`"],
+        ["Dependabot", "`dependabot_alerts.enable`, `dependabot_security_updates.enable`, `dependabot_alerts_new_repos.enable`, `dependabot_closure_request.create`, `.approve`; `repository_vulnerability_alert.auto_dismiss`"],
+        ["Configurations and products", "`security_configuration.create`, `.update`, `.delete`; `repository_security_configuration.applied`; `repo.advanced_security_enabled`; `org.advanced_security_enabled_on_all_repos`, `org.advanced_security_enabled_for_new_repos`"],
+        ["Advisories and repos", "`repository_advisory.open`, `.publish`, `.close`, `.reopen`, `.cve_request`; `repo.access` (visibility change); `repo.code_scanning_analysis_deleted`"]
+      ] } },
+      { "title": "Retention and access", "points": [
+        "Org audit log UI: 180 days, organization owners only (security managers can't open it). A custom org role can hold \"View organization audit log\".",
+        "REST and GraphQL (Enterprise Cloud): 180 days of events, Git events for 7 days only. `GET /enterprises/{enterprise}/audit-log` takes `phrase`, `include` (git or all), `after`, `before` and `per_page` up to 100, and needs the `read:audit_log` scope.",
+        "Audit log API rate limit: 1,750 requests per hour per user and IP, per endpoint. A 403 or 429 means back off.",
+        "Export is capped at a 100 MB compressed file or 10 minutes of processing. Filter first.",
+        "GitHub Enterprise Server keeps its own retention and exposes the log through GraphQL; the training cites 120 days there."
+      ] },
+      { "title": "Streaming", "points": [
+        "Destinations: Amazon S3 (keys or OIDC), Azure Blob Storage, Azure Event Hubs, Datadog, Google Cloud Storage, Splunk (HEC over HTTPS), plus Microsoft Purview for Copilot session events (preview). Multiple endpoints is preview.",
+        "The stream carries audit and Git events across the whole enterprise. API request events are off until you enable them, and only security-relevant endpoints are included.",
+        "Files land as `YYYY/MM/DD/HH/MM/<uuid>.json.log.gz`, delivered at least once. A paused stream buffers 7 days; after about 3 weeks the backlog is lost. Health checks run every 24 hours; fix a broken stream within 6 days. Datadog accepts events up to 18 hours old."
+      ] },
+      { "title": "Who gets which notification", "points": [
+        "Dependabot: owners and admins who watch the repo and have security alerts on, by email, web, mobile or CLI. Digests can be daily or weekly and cover up to 10 repositories per email.",
+        "New-secret alerts (incremental scans): people with alert access per their settings, org and enterprise owners who administer the repo, alert assignees, and always the commit author.",
+        "Historical secret scans: owners and security managers are told when the scan finishes, even if nothing was found. Commit authors are not.",
+        "Push protection bypasses email the owners, security managers and admins who opted in, and are written to the audit log.",
+        "Per-repo control: Watch > Custom > Security alerts. Account-wide: Settings > Notifications > Dependabot alerts."
+      ] },
+      { "title": "Reporting beyond GitHub", "points": [
+        "Webhooks `code_scanning_alert`, `secret_scanning_alert` and `dependabot_alert` feed ticketing and chat tools in real time.",
+        "The Slack and Microsoft Teams apps can post when a Dependabot PR opens, a check fails or an update merges.",
+        "Security overview exports alert lists as CSV for compliance reporting.",
+        "Compliance frameworks that audit dismissals and exceptions: SOC 2, ISO 27001, PCI DSS. GitHub's own reports (SOC 1 Type 2, SOC 2 Type 2, ISO/IEC 27001:2013) are available to enterprise owners."
+      ] }
+    ],
+    "lab": "lab-api",
+    "sources": ["https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/reviewing-the-audit-log-for-your-organization", "https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/audit-log-events-for-your-organization", "https://docs.github.com/en/enterprise-cloud@latest/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/streaming-the-audit-log-for-your-enterprise", "https://docs.github.com/en/enterprise-cloud@latest/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/using-the-audit-log-api-for-your-enterprise", "https://learn.microsoft.com/en-us/training/modules/manage-sensitive-data-security-policies/4-report-logs"] }
+]

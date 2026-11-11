@@ -1,0 +1,157 @@
+{
+  "sections": [
+    { "title": "Exam basics", "wide": true,
+      "table": { "rows": [
+        ["Exam", "GH-500: GitHub Advanced Security. Intermediate. Book through Microsoft Learn."],
+        ["Passing", "700 or higher, scaled score."],
+        ["Content", "Mostly generally available features. Commonly used preview features can appear."],
+        ["Question types", "Single answer and multiple answer (\"Choose two\"). Try the sandbox to see the formats."],
+        ["Validity", "GitHub certifications last 2 years. GitHub is moving to Microsoft's renewal process."],
+        ["Length, price", "Confirm on the exam page when you book. Third-party sites list 100 minutes and $99 USD; those aren't official."],
+        ["Language", "If the exam isn't in your preferred language, you can request 30 extra minutes."]
+      ] } },
+
+    { "title": "Old names in the training, new names on the exam", "wide": true,
+      "table": { "head": ["Training modules say", "July 2026 objectives say"], "rows": [
+        ["GitHub Advanced Security (one add-on license)", "Two products: **GitHub Secret Protection** and **GitHub Code Security**, sold on GitHub Team and Enterprise"],
+        ["Secret scanning", "Secret Protection"],
+        ["Dependabot, dependency review", "Supply chain security"],
+        ["Code scanning with CodeQL", "Code Security"],
+        ["Repository Security tab", "Current docs call it \"Security and quality\"; settings live under \"Advanced Security\""]
+      ] } },
+
+    { "title": "Where the training and the docs disagree", "wide": true,
+      "table": { "head": ["The training says", "The docs say", "On the exam"], "rows": [
+        ["Push protection isn't available on public repos without Secret Protection (module 7 table)", "Public repos get push protection free; push protection for users is on by default", "Read the framing. A question about what the product adds follows the table; a question about public repos follows the docs"],
+        ["Security overview is Code Security only (module 7)", "Either product unlocks it", "Pick the answer that includes Secret Protection when it's offered"],
+        ["Dependabot and secret alerts are for repo admins and org owners (module 7)", "Write and above see Dependabot and code scanning alerts; the secret alert list is admin-only", "Writers see Dependabot alerts; the secret list needs admin"],
+        ["SARIF upload keeps at most 5,000 results (module 4)", "25,000 results per run accepted, top 5,000 kept by severity", "Both are \"5,000 kept\"; 25,000 is the accept limit"],
+        ["The workflow file is `codeql-analysis.yml` (module 4)", "Current docs and the generated file use `codeql.yml`", "Either name may appear; the content is what matters"],
+        ["`groups` applies to version updates only (module 2)", "`applies-to: security-updates` groups security PRs too", "If offered, grouped security updates exist"],
+        ["Three code scanning dismissal reasons", "Four: False positive, Won't fix, Used in tests, Mitigated (August 2026)", "Mitigated is the newest; expect it to show up"],
+        ["Rotate secrets by: verify, create new, update services, delete old (module 3)", "Treat the secret as compromised and revoke or rotate it first", "Both agree: the old secret dies last, after the replacement is live"],
+        ["Dependabot alerts aren't on by default (module 2 unit 3) vs on by default for public repos (module 2 summary)", "Public repos get Dependabot alerts on; private repos enable them or inherit from a configuration", "Public: on. Private: enable"]
+      ] } },
+
+    { "title": "What's in each product", "wide": true,
+      "table": { "head": ["Free on every plan", "GitHub Secret Protection", "GitHub Code Security"], "rows": [
+        ["Dependency graph, SBOM export, Advisory Database, Dependabot alerts, security updates, version updates, malware alerts, security policy, repository security advisories, rulesets, secret scanning partner alerts, push protection for users",
+         "Secret scanning user alerts, push protection, AI-detected secrets, generic patterns, custom patterns, validity checks, delegated bypass, delegated alert dismissal, security campaigns, security overview",
+         "Code scanning, CodeQL CLI, Copilot Autofix, AI Scan, custom Dependabot auto-triage rules, dependency review, security campaigns, security overview"]
+      ] },
+      "note": "Public repos on github.com also get code scanning, the CodeQL CLI, Copilot Autofix, secret scanning and push protection at no cost. Billing: per unique active committer (pushed a commit in the last 90 days; bots ignored), metered on GitHub Enterprise Cloud or volume on Enterprise. Over the committer limit, what's on stays on but nothing new can be enabled." },
+
+    { "title": "Dismiss and close reasons",
+      "table": { "head": ["Alert", "Reasons"], "rows": [
+        ["Secret scanning", "Revoked, False positive, Used in tests, Won't fix"],
+        ["Push protection bypass", "It's used in tests (closed alert), It's a false positive (closed alert), I'll fix it later (open alert)"],
+        ["Code scanning", "False positive, Won't fix, Used in tests, Mitigated (added August 2026)"],
+        ["Dependabot", "Fix has already started, No bandwidth to fix this, Risk is tolerable to this project, This alert is inaccurate or incorrect, Vulnerable code is not actually used"]
+      ] } },
+
+    { "title": "Numbers worth knowing",
+      "table": { "head": ["Number", "What it is"], "rows": [
+        ["3 hours", "Time to push again after you allow a blocked secret"],
+        ["7 days", "A delegated bypass request expires"],
+        ["1 week", "A secret scanning dismissal request expires"],
+        ["90 days", "Window that defines an active committer for billing"],
+        ["30 days", "Window EPSS predicts exploitation for"],
+        ["5", "Secrets shown per blocked push"],
+        ["1,000", "Existing secrets in a push above which push protection doesn't block"],
+        ["50 MB", "Public-repo pushes above this size are skipped by secret scanning"],
+        ["100 / 500", "Custom patterns per repo / per org or enterprise"],
+        ["1,000", "Sample results shown by a custom pattern dry run"],
+        ["10", "Repos you can pick for an org-level dry run"],
+        ["5,000", "Generic (non-provider and AI-detected) alerts kept per repo"],
+        ["5 / 10", "Default open PR limit for version updates / fixed limit for security updates"],
+        ["100", "Private registries per updates block in dependabot.yml"],
+        ["10 MB", "Max SARIF file size, gzipped"],
+        ["20", "Runs per SARIF file"],
+        ["25,000 / 5,000", "Results per SARIF run accepted / kept (by severity)"],
+        ["1,000 / hour", "REST rate limit for SARIF uploads"],
+        ["180 days", "Default setup keeps scanning weekly while a push or PR happened in this window"],
+        ["1,000 / 10", "Alerts per security campaign / active campaigns per org"],
+        ["25", "Code scanning alerts per agentic autofix assignment in a campaign"],
+        ["3,000", "Most recently updated repos an org member sees in security overview"]
+      ] } },
+
+    { "title": "Default setup triggers",
+      "items": [
+        "When default setup is enabled.",
+        "On push to the default branch or any protected branch.",
+        "On pull requests to those branches (not from forks).",
+        "Weekly, as long as a push or PR triggered a scan in the last 180 days.",
+        "Every 30 days for inactive repos, if an org owner turns that on.",
+        "Query suites: `default` or `security-extended` (labelled Extended). Anything else needs advanced setup."
+      ] },
+
+    { "title": "Snippets", "wide": true,
+      "snippets": [
+        { "label": ".github/secret_scanning.yml", "code": "paths-ignore:\n  - \"docs/samples/**\"\n  - \"test/fixtures/**\"" },
+        { "label": "CodeQL advanced setup: the parts the exam asks about", "code": "on:\n  push: { branches: [main] }\n  pull_request: { branches: [main] }\n  schedule: [{ cron: \"30 2 * * 1\" }]\npermissions:\n  security-events: write\n  contents: read\n  actions: read\nstrategy:\n  fail-fast: false\n  matrix:\n    include:\n      - language: javascript-typescript\n        build-mode: none\n      - language: java-kotlin\n        build-mode: autobuild\nsteps:\n  - uses: actions/checkout@v5\n  - uses: github/codeql-action/init@v4\n    with:\n      languages: ${{ matrix.language }}\n      build-mode: ${{ matrix.build-mode }}\n      queries: security-extended\n  - uses: github/codeql-action/analyze@v4\n    with:\n      category: \"/language:${{ matrix.language }}\"" },
+        { "label": ".github/codeql/codeql-config.yml", "code": "name: \"Custom CodeQL config\"\nqueries:\n  - uses: security-extended\npacks:\n  - codeql/javascript-queries\nquery-filters:\n  - exclude:\n      id: js/unused-local-variable\npaths-ignore:\n  - docs/**\n  - test/**\nthreat-models: local" },
+        { "label": "CodeQL CLI in another CI system", "code": "codeql database create db --language=javascript --source-root .\ncodeql database analyze db \\\n  codeql/javascript-queries:codeql-suites/javascript-security-extended.qls \\\n  --format=sarif-latest --output=results.sarif\ncodeql github upload-results --repository=OWNER/REPO \\\n  --ref=refs/heads/main --commit=$SHA --sarif=results.sarif --sarif-category=cli" }
+      ] },
+
+    { "title": "REST, GraphQL and webhooks", "wide": true,
+      "table": { "head": ["Need", "Call"], "rows": [
+        ["Code scanning alerts", "`GET /repos/{owner}/{repo}/code-scanning/alerts`; `PATCH /repos/{owner}/{repo}/code-scanning/alerts/{n}` with `state`, `dismissed_reason`, `dismissed_comment`; org list at `GET /orgs/{org}/code-scanning/alerts`"],
+        ["Upload SARIF", "`POST /repos/{owner}/{repo}/code-scanning/sarifs` (gzip and base64), or the `upload-sarif` action"],
+        ["Default setup", "`GET` and `PATCH /repos/{owner}/{repo}/code-scanning/default-setup`"],
+        ["Secret scanning alerts", "`GET /repos/{owner}/{repo}/secret-scanning/alerts`; `GET /repos/{owner}/{repo}/secret-scanning/alerts/{n}/locations`; org list at `GET /orgs/{org}/secret-scanning/alerts`"],
+        ["Dependabot alerts", "`GET /repos/{owner}/{repo}/dependabot/alerts`; `PATCH /repos/{owner}/{repo}/dependabot/alerts/{n}` with `dismissed_reason`; org list at `GET /orgs/{org}/dependabot/alerts`"],
+        ["Dependency graph", "`GET /repos/{owner}/{repo}/dependency-graph/sbom` (SPDX JSON); `POST /repos/{owner}/{repo}/dependency-graph/snapshots` (submission API, needs `contents: write`)"],
+        ["Security configurations", "`GET` and `POST /orgs/{org}/code-security/configurations`; then `/{id}/attach` (POST), `/{id}/defaults` (PUT), `/detach` (DELETE) under that path; the same calls exist under `/enterprises/{enterprise}/code-security/configurations`"],
+        ["Enable features on a repo", "`PATCH /repos/{owner}/{repo}` with a `security_and_analysis` object"],
+        ["GraphQL", "`Repository.vulnerabilityAlerts` returns `RepositoryVulnerabilityAlert`; mutation `dismissRepositoryVulnerabilityAlert` with FIX_STARTED, INACCURATE, NOT_USED, NO_BANDWIDTH, TOLERABLE_RISK"],
+        ["Webhooks", "`code_scanning_alert`, `secret_scanning_alert`, `dependabot_alert` (the old `repository_vulnerability_alert` is closing down)"]
+      ] } },
+
+    { "title": "GitHub Enterprise Server",
+      "items": [
+        "Enable: upload a license that includes the products, then **Management Console > Settings > Security**. Saving restarts services.",
+        "Dependabot alerts need **GitHub Connect** and the dependency graph. Dependabot updates need Actions with self-hosted runners.",
+        "The CodeQL action ships with GHES. Offline servers update it with `codeql-action-sync-tool`.",
+        "Version gates: delegated dismissal 3.17+, Dependabot dismissal delegation 3.21+, malware alerts 3.22+, metered billing through GitHub Connect 3.13+.",
+        "GitHub.com only: push protection for users, Dependabot graph jobs."
+      ] },
+
+    { "title": "Dependency review action inputs",
+      "table": { "head": ["Input", "Values"], "rows": [
+        ["`fail-on-severity`", "low, moderate, high, critical (default low)"],
+        ["`fail-on-scopes`", "runtime, development, unknown (default runtime)"],
+        ["`allow-licenses` / `deny-licenses`", "SPDX IDs; never both. `deny-licenses` is deprecated in the README"],
+        ["`allow-ghsas`", "GHSA IDs to skip"],
+        ["`comment-summary-in-pr`", "always, on-failure, never (default never); needs `pull-requests: write`"],
+        ["`license-check` / `vulnerability-check`", "true or false, both default true"],
+        ["`config-file`", "Local path or `OWNER/REPO/FILE@BRANCH`; `external-repo-token` for a private repo"]
+      ] } },
+
+    { "title": "dependabot.yml keys",
+      "table": { "head": ["Key", "Notes"], "rows": [
+        ["`version`, `updates`, `package-ecosystem`, `directory`, `schedule.interval`", "Required"],
+        ["`schedule.interval`", "daily, weekly, monthly, quarterly, semiannually, yearly, cron (with `cronjob`)"],
+        ["`groups`", "`applies-to` version-updates (default) or security-updates; `dependency-type`, `patterns`, `exclude-patterns`, `update-types`"],
+        ["`ignore`", "`dependency-name`, `versions`, `update-types`; ignore wins over allow"],
+        ["`open-pull-requests-limit`", "Default 5 for version updates; 0 turns them off; security updates fixed at 10"],
+        ["`target-branch`", "Version updates only; security updates always target the default branch"],
+        ["`registries`", "Up to 100 per updates block"],
+        ["`labels`", "Default `dependencies` plus an ecosystem label; `labels: [ ]` removes all"]
+      ] } },
+
+    { "title": "Trusted sources", "wide": true,
+      "links": [
+        { "title": "GH-500 study guide", "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/gh-500", "note": "the objective list" },
+        { "title": "Certification page", "url": "https://learn.microsoft.com/en-us/credentials/certifications/github-advanced-security/", "note": "booking, renewal" },
+        { "title": "Exam sandbox", "url": "https://GHCertDemo.starttest.com", "note": "question formats" },
+        { "title": "Learning path, Part 1", "url": "https://learn.microsoft.com/en-us/training/paths/github-advanced-security/" },
+        { "title": "Learning path, Part 2", "url": "https://learn.microsoft.com/en-us/training/paths/github-advanced-security-2" },
+        { "title": "GitHub Docs: Code security", "url": "https://docs.github.com/en/code-security" },
+        { "title": "CodeQL documentation", "url": "https://codeql.github.com/docs/" },
+        { "title": "GitHub Skills", "url": "https://github.com/skills", "note": "free hands-on courses" },
+        { "title": "GitHub Changelog", "url": "https://github.blog/changelog/", "note": "check before exam day" },
+        { "title": "GitHub Advisory Database", "url": "https://github.com/advisories" },
+        { "title": "Security plans and pricing", "url": "https://github.com/security/plans", "note": "list prices; not in the docs" }
+      ] }
+  ]
+}

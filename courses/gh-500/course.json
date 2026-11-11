@@ -1,0 +1,149 @@
+{
+  "id": "gh-500",
+  "title": "GH-500 Exam Prep",
+  "exam": {
+    "code": "GH-500",
+    "name": "GitHub Advanced Security",
+    "level": "Intermediate",
+    "objectivesAsOf": "July 2026",
+    "contentCheckedOn": "2026-10-18",
+    "passingScore": "700 (scaled)",
+    "studyGuide": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/gh-500",
+    "examPage": "https://learn.microsoft.com/en-us/credentials/certifications/github-advanced-security/",
+    "sandbox": "https://GHCertDemo.starttest.com",
+    "defaultExamDate": "2026-11-20",
+    "mock": { "questions": 30, "minutes": 60, "target": 80 }
+  },
+  "planStart": "2026-10-19",
+  "domains": [
+    {
+      "id": "d1", "num": 1, "name": "Describe GitHub Security suites, features, and ecosystem", "short": "Suites and ecosystem",
+      "weight": [15, 20],
+      "groups": [
+        { "title": "Understand GitHub Security suites and architecture", "objectives": [
+          { "id": "d1-0-0", "text": "Describe GitHub Security suite structure and navigation" },
+          { "id": "d1-0-1", "text": "Contrast Code Security, Secret Protection, and Supply Chain Security" },
+          { "id": "d1-0-2", "text": "Differentiate security feature availability for public repositories vs. enterprise environments" },
+          { "id": "d1-0-3", "text": "Explain features and benefits of the Security Overview" } ] },
+        { "title": "Apply secure SDLC and security strategies", "objectives": [
+          { "id": "d1-1-0", "text": "Explain differences and interplay between Secret Protection and Code Security" },
+          { "id": "d1-1-1", "text": "Describe end-to-end secure SDLC using GitHub Security suites" },
+          { "id": "d1-1-2", "text": "Compare prevention-first approaches vs. gate-based security strategies" },
+          { "id": "d1-1-3", "text": "Explain security campaigns and their role in reducing risk" } ] },
+        { "title": "Detect, manage, and respond to security alerts", "objectives": [
+          { "id": "d1-2-0", "text": "Identify vulnerability and secret detection mechanisms" },
+          { "id": "d1-2-1", "text": "Choose and act on security alerts (alert management, policies, workflows)" },
+          { "id": "d1-2-2", "text": "Explain implications and best practices for ignoring or dismissing alerts" },
+          { "id": "d1-2-3", "text": "Describe developer, security, and admin responsibilities for alerts and remediation" } ] },
+        { "title": "Manage access, governance, and supply chain security", "objectives": [
+          { "id": "d1-3-0", "text": "Explain alert access management, roles, delegated bypass, and enforcement" },
+          { "id": "d1-3-1", "text": "Describe supply chain security concepts and alert information across the SDLC" } ] }
+      ]
+    },
+    {
+      "id": "d2", "num": 2, "name": "Configure and use Secret Protection", "short": "Secret Protection",
+      "weight": [15, 20],
+      "groups": [
+        { "title": "Enable and configure Secret Protection", "objectives": [
+          { "id": "d2-0-0", "text": "Enable GitHub Secret Protection at the repository and organization levels" },
+          { "id": "d2-0-1", "text": "Configure Secret Protection settings and feature availability" },
+          { "id": "d2-0-2", "text": "Contrast Secret Protection behavior for public vs. private/enterprise repositories" } ] },
+        { "title": "Prevent secret exposure", "objectives": [
+          { "id": "d2-1-0", "text": "Explain Push Protection and how it prevents secrets at the source" },
+          { "id": "d2-1-1", "text": "Describe validity checks and prioritized alerting for high-confidence secrets" } ] },
+        { "title": "Manage and respond to Secret Protection alerts", "objectives": [
+          { "id": "d2-2-0", "text": "Describe the Secret Protection alert lifecycle (creation, status, dismissal)" },
+          { "id": "d2-2-1", "text": "Respond to secret alerts and apply appropriate remediation actions" },
+          { "id": "d2-2-2", "text": "Explain implications and best practices for dismissing or ignoring alerts" } ] },
+        { "title": "Control access, policies, and customization", "objectives": [
+          { "id": "d2-3-0", "text": "Explain role-based and delegated bypass policies in Secret Protection" },
+          { "id": "d2-3-1", "text": "Configure alert recipients and exclusions" },
+          { "id": "d2-3-2", "text": "Create and manage custom secret patterns" } ] }
+      ]
+    },
+    {
+      "id": "d3", "num": 3, "name": "Configure and use supply chain security", "short": "Supply chain security",
+      "weight": [15, 20],
+      "groups": [
+        { "title": "Understand and manage dependency and supply chain risks", "objectives": [
+          { "id": "d3-0-0", "text": "Comprehensive dependency security (tools, vulnerability databases, SBOMs)" },
+          { "id": "d3-0-1", "text": "Generate and interpret the dependency graph" },
+          { "id": "d3-0-2", "text": "SBOM usage: export options, formats, and supply chain context" } ] },
+        { "title": "Detect, prioritize, and respond to supply chain alerts", "objectives": [
+          { "id": "d3-1-0", "text": "Supply chain alerts and security updates (prioritization, EPSS scoring)" },
+          { "id": "d3-1-1", "text": "Remediating supply chain alerts through campaigns and pull requests" },
+          { "id": "d3-1-2", "text": "Auto-dismiss behavior and security campaign configuration" } ] },
+        { "title": "Secure dependencies during development", "objectives": [
+          { "id": "d3-2-0", "text": "Dependency Review (pre-merge checks, license and compliance validation, configuration)" },
+          { "id": "d3-2-1", "text": "Advanced dependency update rules (grouping, auto-dismiss, update strategies)" } ] },
+        { "title": "Configure policies, permissions, and integrations", "objectives": [
+          { "id": "d3-3-0", "text": "Permissions and role-based alert assignment" },
+          { "id": "d3-3-1", "text": "Workflow management for dependency and supply chain security" },
+          { "id": "d3-3-2", "text": "External notifications, webhooks, and security integrations" } ] }
+      ]
+    },
+    {
+      "id": "d4", "num": 4, "name": "Configure and use Code Security", "short": "Code Security",
+      "weight": [10, 15],
+      "groups": [
+        { "title": "Understand code scanning approaches and tooling", "objectives": [
+          { "id": "d4-0-0", "text": "Native and third-party code scanning options" },
+          { "id": "d4-0-1", "text": "Choosing between CodeQL and third-party analysis tools" },
+          { "id": "d4-0-2", "text": "SARIF file ingestion, management, and interoperability" } ] },
+        { "title": "Set up and configure Code Security", "objectives": [
+          { "id": "d4-1-0", "text": "Enable code security using GitHub Actions or external CI systems" },
+          { "id": "d4-1-1", "text": "Configure code scanning workflows and workflow templates" },
+          { "id": "d4-1-2", "text": "Use matrix builds and define appropriate scan frequency" } ] },
+        { "title": "Analyze, triage, and remediate code scanning results", "objectives": [
+          { "id": "d4-2-0", "text": "Review scan results, including dataflow analysis insights" },
+          { "id": "d4-2-1", "text": "Alert lifecycles, autofix capabilities, and remediation workflows" },
+          { "id": "d4-2-2", "text": "Dismissing alerts and managing severity and category classifications" } ] },
+        { "title": "Optimize and automate Code Security operations", "objectives": [
+          { "id": "d4-3-0", "text": "Advanced configuration and customization" },
+          { "id": "d4-3-1", "text": "Troubleshooting scan failures and performance issues" } ] }
+      ]
+    },
+    {
+      "id": "d5", "num": 5, "name": "Security operations: best practices, prioritization, and remediation", "short": "Security operations",
+      "weight": [15, 20],
+      "groups": [
+        { "title": "Understand vulnerability context and remediation frameworks", "objectives": [
+          { "id": "d5-0-0", "text": "CVE, CWE, and GitHub Security Advisory concepts" },
+          { "id": "d5-0-1", "text": "End-to-end remediation workflows across security alerts and advisories" } ] },
+        { "title": "Prioritize and manage security work at scale", "objectives": [
+          { "id": "d5-1-0", "text": "Defining, prioritizing, and enforcing severity and remediation rulesets" },
+          { "id": "d5-1-1", "text": "Campaign-based remediation strategies and bulk alert management" },
+          { "id": "d5-1-2", "text": "Automated alert dismissal and documentation practices" } ] },
+        { "title": "Customize and optimize security detection", "objectives": [
+          { "id": "d5-2-0", "text": "Customizing CodeQL query suites and language-specific analysis" },
+          { "id": "d5-2-1", "text": "Tailoring security detection to organizational risk profiles" } ] },
+        { "title": "Collaborate across roles and enforce governance", "objectives": [
+          { "id": "d5-3-0", "text": "Security roles, delegated exceptions, and alert ownership" },
+          { "id": "d5-3-1", "text": "Collaboration on alerts and security campaigns across teams" },
+          { "id": "d5-3-2", "text": "Cross-suite rulesets, policies, and enforcement mechanisms" } ] },
+        { "title": "Shift left and strengthen preventive security", "objectives": [
+          { "id": "d5-4-0", "text": "Early vulnerability prevention through push protection, dependency scanning, and pre-merge analysis" } ] }
+      ]
+    },
+    {
+      "id": "d6", "num": 6, "name": "GitHub Security suites administration", "short": "Administration",
+      "weight": [10, 15],
+      "groups": [
+        { "title": "Roll out and manage security features at scale", "objectives": [
+          { "id": "d6-0-0", "text": "Enable GitHub Security Suites at enterprise, organization, and repository levels" },
+          { "id": "d6-0-1", "text": "Understand feature availability and differences across GitHub Enterprise Cloud and GitHub Enterprise Server" } ] },
+        { "title": "Configure security features and defaults", "objectives": [
+          { "id": "d6-1-0", "text": "Enable Code Security (CodeQL), Secret Protection, and Supply Chain Security" },
+          { "id": "d6-1-1", "text": "Define default configurations and inheritance behavior" } ] },
+        { "title": "Define governance, access, and Code Security workflows", "objectives": [
+          { "id": "d6-2-0", "text": "Define enterprise and organization security policies and rulesets" },
+          { "id": "d6-2-1", "text": "Configure enforcement boundaries, bypass permissions, and exceptions" },
+          { "id": "d6-2-2", "text": "Define administrator, security manager, and developer roles" },
+          { "id": "d6-2-3", "text": "Configure permissions for managing and dismissing security alerts" } ] },
+        { "title": "Manage CodeQL and security automation", "objectives": [
+          { "id": "d6-3-0", "text": "Enable and configure default or approved custom CodeQL workflows" },
+          { "id": "d6-3-1", "text": "Understand available APIs and automation methods for large-scale security configuration and governance" } ] }
+      ]
+    }
+  ]
+}

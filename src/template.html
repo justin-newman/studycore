@@ -1,0 +1,30 @@
+<title>{{TITLE}}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="{{DESCRIPTION}}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Schibsted+Grotesk:wght@600;700;800&display=swap">
+<style>{{CSS}}</style>
+<!-- body -->
+<div class="app">
+  <header class="bar">
+    <div class="bar-in">
+      <button class="brand" data-go="today" aria-label="Go to Today"><span class="brand-code">{{EXAM_CODE}}</span><span class="brand-name">{{EXAM_NAME}}</span></button>
+      <span class="pill" id="sync">Saving on this device</span>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <button data-go="today">Today</button>
+      <button data-go="learn">Learn</button>
+      <button data-go="practice">Practice</button>
+      <button data-go="labs">Labs</button>
+      <button data-go="plan">Plan</button>
+      <button data-go="progress">Progress</button>
+      <button data-go="reference">Reference</button>
+    </nav>
+  </header>
+  <main id="view" class="wrap" tabindex="-1"></main>
+  <footer class="wrap foot" id="foot"></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</div>
+<script type="application/json" id="course-data">{{DATA}}</script>
+<script>{{APP}}</script>

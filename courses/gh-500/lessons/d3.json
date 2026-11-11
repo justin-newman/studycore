@@ -1,0 +1,275 @@
+[
+  { "id": "l-dep-graph", "domain": "d3", "objectives": ["d3-0-0", "d3-0-1", "d3-0-2"],
+    "title": "Dependency graph and SBOMs", "minutes": 10,
+    "goal": "Explain where dependency data comes from and how to export it.",
+    "points": [
+      "The graph comes from four sources: static analysis of manifest and lock files, Dependabot graph jobs (Go and Python), **automatic dependency submission**, and the **dependency submission API**.",
+      "Automatic dependency submission covers Maven, Gradle, NuGet, pip and Poetry. It runs in GitHub Actions and uses Actions minutes.",
+      "The submission API is `POST /repos/{owner}/{repo}/dependency-graph/snapshots`. Use it for build-time dependencies a manifest can't show.",
+      "**SBOM:** Insights > Dependency graph > Export SBOM, or the REST API. Format: SPDX JSON. Read access is enough. The synchronous `GET /repos/{owner}/{repo}/dependency-graph/sbom` endpoint stops working after 2026-11-13; use the async generate-report and fetch-report pair.",
+      "Dependabot alerts come from the graph matched against GitHub-reviewed advisories."
+    ],
+    "trap": "The SBOM export format is SPDX, not CycloneDX.",
+    "tryIt": "Open **Insights > Dependency graph** on any repo and select Export SBOM.",
+    "details": [
+      { "title": "Where the data comes from", "table": { "head": ["Source", "Covers", "Notes"], "rows": [
+        ["Static analysis", "Manifests and lock files; transitive dependencies for Maven, npm, pnpm and Yarn", "Indirect dependencies inferred from a manifest without a lock file are left out of vulnerability checks"],
+        ["Dependabot graph jobs", "Go modules, pip, Poetry", "No Actions minutes; uses Dependabot secrets for private registries; skips packages it can't reach; not on GHES"],
+        ["Automatic dependency submission", "NuGet, Gradle, Maven, pip, Poetry", "Runs in Actions when a default-branch commit changes a manifest; setting: Enabled, or Enabled for labeled runners (label `dependency-submission`, Linux or macOS)"],
+        ["Dependency submission API", "Anything your build resolves", "Highest precedence; shows in dependency review but not in org dependency insights"]
+      ] },
+        "points": ["Precedence per manifest: user submissions, then Dependabot graph jobs, then automatic submission, then static analysis.", "Community-maintained ecosystems: Julia, OpenTofu, pub."] },
+      { "title": "Ecosystems and files (module 2)", "points": [
+        "Supported: Cargo, Composer, NuGet, GitHub Actions workflows, Go modules, Maven, npm, pip, pnpm, pub, Poetry, RubyGems, Swift PM, Yarn.",
+        "Lock files give the most accurate graph: Cargo.lock, composer.lock, package-lock.json, pnpm-lock.yaml, yarn.lock, Gemfile.lock, poetry.lock, pubspec.lock, Package.resolved. Maven uses pom.xml, Go uses go.mod.",
+        "Direct dependencies are declared or submitted; indirect (transitive) ones come from lock files. Manifest-only means indirect dependencies aren't checked for vulnerabilities.",
+        "The graph updates on pushes to the default branch that change a supported manifest or lock file, and when a dependency's own repo changes. Submitted dependencies show which detector submitted them and when.",
+        "Two tabs: **Dependencies** (upstream) and **Dependents** (downstream). Dependents show only for public repos; the \"Used by\" badge needs more than 100 dependents. Filters: `ecosystem:` and `relationship:direct|transitive|inconclusive`."
+      ] },
+      { "title": "The submission API", "points": [
+        "Required body: `version`, `job` (`id`, `correlator`), `sha` (up to 64 chars), `ref`, `detector` (`name`, `version`, `url`), `scanned`. `metadata` allows up to 8 scalar keys.",
+        "Resolved entries use `package_url` (a PURL), `relationship` direct or indirect, and `scope` runtime or development.",
+        "Only the latest snapshot per `job.correlator` plus `detector.name` counts. A successful call returns 201. Classic tokens need the `repo` scope; in Actions the job needs `contents: write`.",
+        "Pair it with dependency review by submitting first and retrying the review while the `x-github-dependency-graph-snapshot-warnings` header is non-empty."
+      ] },
+      { "title": "SBOM export", "points": [
+        "SPDX format; the REST API returns SPDX JSON. UI path: Insights > Dependency graph > Export SBOM.",
+        "Async flow: `GET /repos/{owner}/{repo}/dependency-graph/sbom/generate-report` returns 201 with an `sbom_url`; then `GET /repos/{owner}/{repo}/dependency-graph/sbom/fetch-report/{sbom_uuid}` answers 202 while processing and 302 to a temporary download URL when ready. Reports are kept up to one week.",
+        "The old synchronous `GET /repos/{owner}/{repo}/dependency-graph/sbom` is deprecated and won't be accessible after November 13, 2026.",
+        "Why it matters: US federal suppliers must provide an SBOM under Executive Order 14028 (module 2)."
+      ] },
+      { "title": "Dependency insights (organization)", "points": [
+        "Enterprise Cloud only, needs the dependency graph, excludes private dependencies, and is in maintenance mode.",
+        "Visibility: org Settings > Member privileges > \"Allow members to view dependency insights\" (default: all members), or the enterprise policy \"Dependency insights visibility\"."
+      ] }
+    ],
+    "lab": "lab-dependabot-yml",
+    "sources": ["https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-graph-data", "https://docs.github.com/en/code-security/reference/supply-chain-security/dependency-graph-supported-package-ecosystems", "https://docs.github.com/en/rest/dependency-graph/dependency-submission", "https://docs.github.com/en/rest/dependency-graph/sboms", "https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/export-dependencies-as-sbom", "https://learn.microsoft.com/en-us/training/modules/configure-dependabot-security-updates-on-github-repo/2-manage-your-dependencies-github"] },
+
+  { "id": "l-dependabot-alerts", "domain": "d3", "objectives": ["d3-1-0", "d3-1-1"],
+    "title": "Dependabot alerts, severity and EPSS", "minutes": 10,
+    "goal": "Read a Dependabot alert and prioritize it using severity and EPSS.",
+    "points": [
+      "Alerts fire when a dependency matches a **GitHub-reviewed** advisory: when a new advisory is published or the dependency graph changes. Unreviewed advisories don't trigger alerts, and archived repos aren't scanned.",
+      "**Severity** reflects impact (CVSS 3.1 or 4.0 based): Low, Medium (Moderate), High, Critical. **EPSS**, from FIRST, is a 0 to 1 probability of exploitation in the next 30 days, with a percentile, refreshed daily.",
+      "**Security updates** open PRs that bump to the minimum patched version. PRs are the fix path for dependency alerts.",
+      "**Malware alerts** (free) flag packages listed as malicious. Turn on Dependabot alerts first; malware advisories carry no fix version.",
+      "Write, Maintain and Admin can view, dismiss and assign Dependabot alerts."
+    ],
+    "trap": "Critical severity in a dev-only tool can wait behind high severity with a high EPSS score in production code.",
+    "tryIt": "Open github.com/advisories, pick one advisory, and find its severity and EPSS.",
+    "details": [
+      { "title": "What an alert shows and how to filter", "points": [
+        "Each alert links the affected manifest, the vulnerable package, affected versions and the patched version, with severity and score, CVSS metrics, CWE, CVE ID and GHSA ID.",
+        "UI filters: `ecosystem:`, `package:`, `manifest:`, `severity:`, `scope:development`, `has:patch`, `is:open`, `resolution:no-bandwidth`, `relationship:direct`, `epss_percentage:>0.01`. Sort: most-important (default), newest, epss-percentage.",
+        "REST filters: `state` open, dismissed, fixed, auto_dismissed; `severity`; `ecosystem` (composer, go, maven, npm, nuget, pip, pub, rubygems, rust); `has=patch`; `epss_percentage` ranges; `sort=epss_percentage`.",
+        "Alerts can be assigned to collaborators, teams or a Copilot agent, which opens a draft PR. GitHub Actions dependencies are checked only when pinned by semantic version."
+      ] },
+      { "title": "Security updates", "points": [
+        "Prerequisites: dependency graph and Dependabot alerts on, the dependency in a manifest or lock file, and the repo not archived. Forks get security updates disabled automatically; new repos that qualify get them on.",
+        "Enabling opens PRs for every open alert that has a patched version. npm can update a parent or remove a sub-dependency; other ecosystems can't fix an indirect dependency that needs a parent update.",
+        "Each PR is authored by dependabot, labelled `dependencies`, named for the package and target version, and signed. A **compatibility score** shows the share of CI runs that passed for the same version jump in other public repos. Merging the PR closes the alert.",
+        "Vulnerability details in the PR are hidden from users without alert access. An alert page offers **Create Dependabot security update** when updates aren't enabled.",
+        "**Grouped security updates:** one PR per ecosystem, never mixed with version updates; needs graph, alerts and security updates; settings precedence dependabot.yml, then repo UI, then org UI. Repo toggles: Dependabot security updates, Grouped security updates."
+      ] },
+      { "title": "Severity, EPSS and prioritizing", "points": [
+        "Severity answers \"how bad if exploited\"; EPSS answers \"how likely to be exploited soon\". Dependency scope (runtime vs development) and whether a patch exists are the other two factors GitHub's alert metrics use.",
+        "The security overview Dependabot funnel defaults to `has:patch`, `severity:critical,high`, `epss-percentage:>=0.01`: patchable, severe, and at least 1% likely to be exploited.",
+        "Removing a dependency you don't need beats upgrading it: smaller attack surface, less maintenance (module 2)."
+      ] },
+      { "title": "Malware alerts", "points": [
+        "Ecosystems: Composer, Go, Maven, npm, NuGet, pip, RubyGems, Rust. Available on GitHub.com and GHES 3.22+.",
+        "Malware advisories come from the npm security team and OpenSSF Malicious Packages, are GitHub-reviewed, and have no fix version: remove the package.",
+        "Enable Dependabot alerts first, then Dependabot malware alerts. The malware auto-triage preset can dismiss them, which is why it's off by default."
+      ] },
+      { "title": "Notifications", "points": [
+        "No notifications are sent for vulnerabilities found when Dependabot is first enabled on a repo.",
+        "Channels: web inbox, email, a CLI warning on push, GitHub Mobile. Email digest: daily or weekly, up to 10 repositories per email. Emails carry an `X-GitHub-Severity` header for filtering.",
+        "Default recipients: owners and admins who watch the repo with security alerts or all activity on. Account-wide control: Settings > Notifications > Dependabot alerts."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 2 says Dependabot alerts aren't on by default, then its summary says Dependabot is on by default for public repos. Today: public repos get alerts on; private repos enable them in Settings > Advanced Security or inherit a configuration.",
+        "Module 2 enable paths: personal Settings > Code security; org Settings > Code security and analysis with \"Automatically enable for new repositories\"; enterprise-level enablement overrides org and repo settings.",
+        "Module 2 resolution options: merge the Dependabot PR, select Create Dependabot security update, or Dismiss alert with a reason."
+      ] }
+    ],
+    "lab": "lab-supply-skills",
+    "sources": ["https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-alerts", "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-security-updates", "https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-alerts-filters", "https://docs.github.com/en/code-security/concepts/vulnerability-reporting-and-management/github-advisory-database", "https://docs.github.com/en/code-security/concepts/supply-chain-security/malware-alerts", "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-alert-metrics", "https://learn.microsoft.com/en-us/training/modules/configure-dependabot-security-updates-on-github-repo/3-dependabot-alerts"] },
+
+  { "id": "l-dependabot-config", "domain": "d3", "objectives": ["d3-2-1"],
+    "title": "Dependabot updates and dependabot.yml", "minutes": 10,
+    "goal": "Write a dependabot.yml that groups updates and skips what you don't want.",
+    "points": [
+      "Required keys: `version: 2`, `updates`, `package-ecosystem`, `directory` (or `directories`), `schedule.interval`.",
+      "`groups` bundles updates into one PR. With `applies-to: security-updates` a group covers security PRs; without it, version updates.",
+      "`ignore` skips dependencies, versions or update types. If allow and ignore both match, ignore wins.",
+      "`open-pull-requests-limit` defaults to 5 for version updates. Security updates have a fixed limit of 10. Setting 0 turns version updates off.",
+      "`target-branch` affects version updates only. Security updates always target the default branch."
+    ],
+    "trap": "Security updates are switched on in repo settings. The file only tunes them, for example by grouping.",
+    "tryIt": "Copy the snippet into a scratch file and change the interval to monthly.",
+    "snippet": { "label": ".github/dependabot.yml", "code": "version: 2\nupdates:\n  - package-ecosystem: \"npm\"\n    directory: \"/\"\n    schedule:\n      interval: \"weekly\"\n    groups:\n      dev-minor-patch:\n        dependency-type: \"development\"\n        update-types: [\"minor\", \"patch\"]\n      security:\n        applies-to: security-updates\n        patterns: [\"*\"]\n    ignore:\n      - dependency-name: \"express\"\n        update-types: [\"version-update:semver-major\"]" },
+    "details": [
+      { "title": "Schedule", "points": [
+        "`schedule.interval`: daily, weekly (Monday by default), monthly, quarterly, semiannually, yearly (GHES 3.19+), or cron with a `cronjob` value (5 fields or natural language). Optional `day`, `time` (hh:mm), `timezone` (IANA, default UTC); a random time if unset.",
+        "`cooldown` delays updates after a release: `default-days` (default 3), `semver-major-days`, `semver-minor-days`, `semver-patch-days`, with `include` and `exclude` lists of up to 150 items. Version updates only."
+      ] },
+      { "title": "Targeting and filtering", "points": [
+        "`allow.dependency-type`: direct, indirect, all, production, development. Indirect works only for bundler, pip, composer, cargo, gomod and uv.",
+        "`directories` supports globs; `directory` doesn't. Use `/` for github-actions and devcontainers.",
+        "`ignore` takes `dependency-name`, `versions`, `update-types` (`version-update:semver-major|minor|patch`). Ignore wins over allow.",
+        "`versioning-strategy`: auto (default), increase, increase-if-necessary, lockfile-only, widen. Apps generally use increase; libraries widen.",
+        "`rebase-strategy` only accepts `disabled` (existing PRs still rebase for 30 days). `vendor: true` only for bundler and gomod. `insecure-external-code-execution: allow` for bundler, mix and pip, disabled once registries exist."
+      ] },
+      { "title": "Shaping the pull requests", "points": [
+        "`groups`: `applies-to` version-updates (default) or security-updates; `dependency-type`; `patterns`; `exclude-patterns`; `update-types`. Grouped PR branch names get a 10-character digest. A top-level `multi-ecosystem-groups` key exists too.",
+        "`labels` (default `dependencies` plus an ecosystem label; `labels: [ ]` removes all), `milestone` (a number), `assignees`, `reviewers`.",
+        "`commit-message`: `prefix` and `prefix-development` up to 50 characters; `include: \"scope\"` adds deps or deps-dev.",
+        "`pull-request-branch-name`: `separator` `/` (default), `-` or `_`; `prefix` default dependabot; `max-length` default 100 (20 to 244); `template` up to 200 characters."
+      ] },
+      { "title": "Ecosystem values", "points": [
+        "`package-ecosystem` values, part 1: bazel, bun, bundler, cargo, composer, conda, deno, devcontainers, docker, docker-compose, dotnet-sdk, elm, gitsubmodule, github-actions, gomod, gradle, helm.",
+        "Part 2: julia, maven, mix, nix, npm (also pnpm and yarn), nuget, opentofu, pip (also pipenv and poetry), pre-commit, pub, rust-toolchain, sbt, swift, terraform, uv, vcpkg.",
+        "Docker updates scan a Dockerfile's base images; github-actions updates the action versions in your workflows."
+      ] },
+      { "title": "Private registries, secrets and runners", "points": [
+        "`registries`: `type` and `url` required; up to 100 registries and 100 references per updates block; `replaces-base` for mirrors; `scope` only for npm. Declare private registries even when anonymous, because Dependabot jobs run behind an egress allowlist.",
+        "**Dependabot secrets:** Settings > Secrets and variables > Dependabot, referenced as `${{secrets.NAME}}`. Names use letters, digits and underscores, no `GITHUB_` prefix, no leading digit. Org secrets need admin and a repository access policy.",
+        "GitHub Packages dependencies need no token or registry entry: grant the repo Read access under the package's Manage Actions access.",
+        "**Dependabot on Actions runners:** standard hosted and self-hosted runners use no Actions minutes; larger runners are billed. Runner label `dependabot`; labeled runners aren't available on public repos. Dependabot runs bypass Actions policies and disablement.",
+        "Runner type: repo Advanced Security > Dependency scanning > Dependabot version updates > Runner type, or org Global settings: Standard GitHub runner or Labeled runner. Org Global settings also hold \"Grant Dependabot access to private repositories\" (same org only)."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 2 says \"the groups option only applies to version updates\". That's stale: `applies-to: security-updates` exists. If both answers are offered, grouped security updates are real.",
+        "Module 2: Insights > Dependency graph > Dependabot lists monitored files; \"Last checked\" opens the job log; \"Check for updates\" reruns it. Forks don't get version updates automatically; use Create config file there.",
+        "A user with write permission turns on version updates by committing dependabot.yml; it needs no admin."
+      ] }
+    ],
+    "lab": "lab-dependabot-yml",
+    "sources": ["https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference", "https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-access-to-private-registries", "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-on-actions", "https://learn.microsoft.com/en-us/training/modules/configure-dependabot-security-updates-on-github-repo/4-dependabot-security-updates"] },
+
+  { "id": "l-auto-triage", "domain": "d3", "objectives": ["d3-1-2", "d3-2-1"],
+    "title": "Auto-triage rules", "minutes": 7,
+    "goal": "Cut Dependabot noise with auto-triage rules without losing alerts.",
+    "points": [
+      "Rules run before notifications go out. Auto-dismissed alerts stay filterable and reportable, and reopen if their metadata changes.",
+      "**GitHub presets** (free): \"Dismiss low impact issues for development-scoped dependencies\" (npm dev dependencies; on by default for public repos) and \"Dismiss package malware alerts\" (off by default).",
+      "**Custom rules** (Code Security) can dismiss, snooze until a patch exists, reopen, or open a Dependabot pull request for matching alerts.",
+      "Custom rules match on CVE ID, CWE, dependency scope, ecosystem, GHSA ID, manifest path, package name, patch availability, severity and EPSS score.",
+      "Use them for known noise, like dev-only tooling, not to hide production risk."
+    ],
+    "trap": "The malware preset can dismiss a truly malicious package. That's why it's off by default.",
+    "tryIt": "Name one dev-only dependency in a project you know where auto-dismissing low-impact alerts would be safe.",
+    "details": [
+      { "title": "The presets, exactly", "table": { "head": ["Preset", "What it dismisses", "Default"], "rows": [
+        ["Dismiss low impact issues for development-scoped dependencies", "npm development dependencies with CWEs about resource management, programming and logic errors, or information disclosure", "On for public repos; opt-in for private"],
+        ["Dismiss package malware alerts", "Alerts where every version of a package is flagged malicious, usually an internal package sharing a name with a malicious public one", "Off"]
+      ] } },
+      { "title": "Custom rules", "points": [
+        "Path: Settings > Advanced Security > Dependabot > gear next to Dependabot rules > New rule. Fields: Rule name, State, Target alerts (for example `severity:low`), then the action.",
+        "Actions: **Dismiss alerts** (indefinitely, or until a patch is available) and **Open a pull request to resolve this alert**. The PR action is unavailable when dismissing indefinitely or when security updates are already on.",
+        "Who: repo admins at repo level; org owners and security managers at org level under Global settings. Up to 10 custom rules per repository during the preview.",
+        "Org rules are **Enforced** (repo admins can't edit, disable or delete) or **Enabled** (repo admins can disable). On a conflict the org action wins. Dismissal rules run before PR rules.",
+        "Manifest path is a criterion for repo-level rules only."
+      ] },
+      { "title": "Auto-dismissed alerts", "points": [
+        "Find them with the filter `resolution:auto-dismissed`. REST state `auto_dismissed`; GraphQL `AUTO_DISMISSED`; webhook actions `auto_dismissed` and `auto_reopened`.",
+        "Auto-reopen triggers: the dependency's scope changes from development to production, or GitHub edits the advisory's metadata.",
+        "Audit log: `repository_vulnerability_alert.auto_dismiss` / `auto_reopen`, and `vulnerability_alert_rule.create` / `force_enable`."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-auto-triage-rules", "https://docs.github.com/en/enterprise-cloud@latest/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/auto-triage-dependabot-alerts", "https://learn.microsoft.com/en-us/training/modules/configure-dependabot-security-updates-on-github-repo/5-manage-dependabot-notifications-reporting"] },
+
+  { "id": "l-dep-review", "domain": "d3", "objectives": ["d3-2-0", "d5-4-0"],
+    "title": "Dependency review before merge", "minutes": 10,
+    "goal": "Block risky dependency changes in pull requests.",
+    "points": [
+      "Dependency review is a **rich diff** on the PR's Files changed tab for manifests and lock files: added, removed and changed dependencies, including indirect ones, with vulnerabilities, licenses, release dates and how many projects use each.",
+      "Free on public repos. Private repos need Code Security.",
+      "The action fails on `fail-on-severity` (low, moderate, high, critical; default low) and `fail-on-scopes` (runtime by default). By default any vulnerable package fails the check; an undetectable license only warns.",
+      "Licenses: `allow-licenses` or `deny-licenses`, never both. The action's README marks `deny-licenses` deprecated, so prefer allow lists.",
+      "Make the check required in a ruleset to block merge. Org owners can also enforce the action as a required workflow."
+    ],
+    "trap": "Dependency review prevents new risk. Dependabot security updates fix risk that's already merged.",
+    "tryIt": "Open the related lab and find the line that blocks high-severity vulnerabilities.",
+    "details": [
+      { "title": "Every action input", "table": { "head": ["Input", "Values and default"], "rows": [
+        ["`fail-on-severity`", "low, moderate, high, critical; default low"],
+        ["`fail-on-scopes`", "runtime, development, unknown; default runtime"],
+        ["`allow-licenses` / `deny-licenses`", "SPDX IDs, mutually exclusive; `deny-licenses` deprecated in the README; not supported on GHES"],
+        ["`allow-dependencies-licenses`", "PURLs whose license check to skip; not supported on GHES"],
+        ["`allow-ghsas`", "GHSA IDs to ignore"],
+        ["`deny-packages` / `deny-groups`", "PURLs, or PURL namespaces, to block outright"],
+        ["`comment-summary-in-pr`", "always, on-failure, never; default never; needs `pull-requests: write`"],
+        ["`warn-only`", "true makes every failure a warning; overrides `fail-on-severity`; default false"],
+        ["`license-check` / `vulnerability-check`", "true or false; both default true"],
+        ["`show-openssf-scorecard` / `warn-on-openssf-scorecard-level`", "true; warn at level 3"],
+        ["`retry-on-snapshot-warnings` / `retry-on-snapshot-warnings-timeout`", "false; 120 seconds; for pairing with the submission API"],
+        ["`config-file` / `external-repo-token`", "Local path or `OWNER/REPO/FILE@BRANCH`; token for a private config repo"],
+        ["`base-ref` / `head-ref`", "For running on events other than pull_request"],
+        ["`show-patched-versions`", "List fixed versions in the output"]
+      ] } },
+      { "title": "What the review shows", "points": [
+        "Summary of vulnerable packages, incompatible licenses, invalid SPDX license definitions and unknown licenses (shown as `LicenseRef-clearlydefined-OTHER`). It appears as a PR comment or under Checks > Dependency review.",
+        "The rich diff is on the Files changed tab for PRs that change a manifest or lock file, and includes indirect dependencies from lock files.",
+        "Dependencies added by the submission API show in dependency review too. Run submission first, then let the action retry while the snapshot-warnings header is set."
+      ] },
+      { "title": "REST and GHES", "points": [
+        "REST: `GET /repos/{owner}/{repo}/dependency-graph/compare/{basehead}` with `{base}...{head}` and an optional `name` (manifest path). Fields: `change_type` added or removed, `scope` unknown, runtime or development. 403 on a private repo without the product, or on a fork.",
+        "GHES: available once the dependency graph is enabled; the action needs Code Security or GHAS on the repo; the license inputs aren't supported.",
+        "Disabling Secret Protection and Code Security on a private repo also turns off dependency review."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 2 setup: Actions tab > New workflow > search \"dependency review\" > Configure > commit `dependency-review.yml`. The template runs on pull_request to main with `contents: read` and `pull-requests: write`, and sets `comment-summary-in-pr: always`.",
+        "Both module examples use `deny-licenses: GPL-1.0-or-later, LGPL-2.0-or-later` as a normal option. Expect it on the exam even though the README deprecates it.",
+        "Enforcement in the module: Settings > Branches > Add rule > Require status checks > add `dependency-review`. Today, rulesets are preferred.",
+        "The short tag `v4` tracks the latest minor release."
+      ] }
+    ],
+    "lab": "lab-dep-review",
+    "sources": ["https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review", "https://docs.github.com/en/enterprise-cloud@latest/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-dependency-review-action", "https://github.com/actions/dependency-review-action", "https://docs.github.com/en/rest/dependency-graph/dependency-review", "https://learn.microsoft.com/en-us/training/modules/configure-dependabot-security-updates-on-github-repo/6-dependency-review"] },
+
+  { "id": "l-supply-integrations", "domain": "d3", "objectives": ["d3-3-0", "d3-3-1", "d3-3-2"],
+    "title": "Permissions, webhooks and integrations", "minutes": 9,
+    "goal": "Route supply chain alerts to the right people and systems.",
+    "points": [
+      "Grant Dependabot alert access to people or teams with write access. Custom roles can add \"View Dependabot alerts\" and \"Dismiss or reopen Dependabot alerts\".",
+      "Webhook: `dependabot_alert`. The older `repository_vulnerability_alert` event is closing down.",
+      "GraphQL: `Repository.vulnerabilityAlerts` returns `RepositoryVulnerabilityAlert` objects. REST: `/repos/{owner}/{repo}/dependabot/alerts`, plus org and enterprise lists.",
+      "Dependabot PRs go through your normal workflow: required reviews, required checks and rulesets apply. A workflow can auto-merge the safe ones.",
+      "Who gets notified follows each person's watch and notification settings."
+    ],
+    "trap": "If an answer offers `repository_vulnerability_alert` as the current webhook, it's the old one.",
+    "tryIt": "Run `gh api \"/repos/OWNER/REPO/dependabot/alerts?state=open\"` on a repo you own.",
+    "details": [
+      { "title": "Webhook events and their actions", "table": { "head": ["Event", "Actions"], "rows": [
+        ["`dependabot_alert` (needs Dependabot alerts: read)", "assignees_changed, auto_dismissed, auto_reopened, created, dismissed, fixed, reintroduced, reopened, withdrawn"],
+        ["`repository_vulnerability_alert` (closing down)", "create, dismiss, reopen, resolve"],
+        ["`code_scanning_alert`", "appeared_in_branch, closed_by_user, created, fixed, reopened, reopened_by_user, updated_assignment"],
+        ["`secret_scanning_alert`", "created, resolved, reopened, validated, publicly_leaked, assigned, unassigned, metadata_created, metadata_removed"]
+      ] } },
+      { "title": "GraphQL", "points": [
+        "`RepositoryVulnerabilityAlert` fields include `autoDismissedAt`, `dependencyRelationship`, `dependencyScope`, `dismissComment`, `dismissReason`, `fixedAt`, `securityAdvisory`, `securityVulnerability`, `state`, `vulnerableManifestPath`. State enum: AUTO_DISMISSED, DISMISSED, FIXED, OPEN.",
+        "Mutation `dismissRepositoryVulnerabilityAlert` takes `repositoryVulnerabilityAlertId` and a `DismissReason`: FIX_STARTED, INACCURATE, NOT_USED, NO_BANDWIDTH, TOLERABLE_RISK.",
+        "One endpoint, `POST https://api.github.com/graphql`, with `Authorization: Bearer <token>`. Nest fields until you reach scalars; `query` is the default root. Resolved alerts aren't stored and can't be retrieved later (module 2)."
+      ],
+        "snippet": { "label": "GraphQL: open vulnerability alerts", "code": "query {\n  repository(owner: \"OWNER\", name: \"REPO\") {\n    vulnerabilityAlerts(first: 100, states: OPEN) {\n      nodes {\n        createdAt\n        securityVulnerability {\n          package { name }\n          severity\n          vulnerableVersionRange\n          advisory { ghsaId publishedAt }\n        }\n      }\n    }\n  }\n}" } },
+      { "title": "REST", "points": [
+        "List endpoints: `GET /enterprises/{enterprise}/dependabot/alerts`, `GET /orgs/{org}/dependabot/alerts` (owner or security manager), `GET /repos/{owner}/{repo}/dependabot/alerts`.",
+        "`PATCH /repos/{owner}/{repo}/dependabot/alerts/{alert_number}` sets `state`, `dismissed_reason`, `dismissed_comment`, `assignees` and `agent_assignment`. Assignment support is public preview (API version 2026-03-10).",
+        "Send `Accept: application/vnd.github+json` and `X-GitHub-Api-Version: 2022-11-28`. Rate limit: 5,000 requests per hour authenticated, 60 unauthenticated; check with `GET /rate_limit`."
+      ] },
+      { "title": "Org and enterprise settings", "points": [
+        "Org Global settings: \"Grant Dependabot access to private repositories\" lets Dependabot resolve private same-org dependencies. The docs warn that every org user can then reach that repo's content through Dependabot.",
+        "Enterprise policy \"Enable or disable Dependabot alerts by repository admins\" controls whether repo admins can change the setting.",
+        "Audit log: `dependabot_repository_access.*` and `repository_vulnerability_alerts.authorized_users_teams` record access grants."
+      ] },
+      { "title": "Automation patterns (module 2)", "points": [
+        "Auto-merge Dependabot PRs: gate on `github.event.pull_request.user.login == 'dependabot[bot]'`, run tests, then `gh pr merge --auto --merge \"$PR_URL\"` with `GH_TOKEN`. Limit it to patch releases.",
+        "The Slack and Microsoft Teams apps can post when a Dependabot PR opens, a check fails or an update merges.",
+        "Prefer a GitHub App over a personal token for org-wide integrations."
+      ] }
+    ],
+    "lab": "lab-api",
+    "sources": ["https://docs.github.com/en/webhooks/webhook-events-and-payloads", "https://docs.github.com/en/graphql/reference/dependabot", "https://docs.github.com/en/rest/dependabot/alerts", "https://docs.github.com/en/code-security/how-tos/secure-at-scale/configure-organization-security/establish-complete-coverage/configure-global-settings", "https://learn.microsoft.com/en-us/training/modules/configure-dependabot-security-updates-on-github-repo/5-manage-dependabot-notifications-reporting"] }
+]

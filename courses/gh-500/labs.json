@@ -1,0 +1,207 @@
+[
+  { "id": "lab-secret-skills", "title": "Introduction to secret scanning", "source": "GitHub Skills", "fromTraining": true, "requires": "free", "minutes": 15, "domains": ["d2"],
+    "link": "https://github.com/skills/introduction-to-secret-scanning",
+    "prereqs": ["A GitHub account", "A browser; no local tools needed"],
+    "steps": [
+      "Open the repo and select **Start course**. Make your copy public so it doesn't use Actions minutes.",
+      "Wait 20 seconds, refresh, and follow the README.",
+      "Open the alert for the committed test credential and read its details: secret type, location, validity.",
+      "Turn on push protection under **Settings > Advanced Security**.",
+      "Push a fake token and read the block message and the three bypass choices."
+    ],
+    "verify": "Your copy's Security and quality tab shows the test credential's alert, and your push with a fake token was blocked.",
+    "tips": ["Secret scanning is already on for new public repos, so the first README step may be done for you.", "The README rewrites itself after each step. Wait about 20 seconds and refresh."] },
+
+  { "id": "lab-custom-pattern", "title": "Create a custom pattern and dry-run it", "source": "Extra lab", "requires": "org", "minutes": 30, "domains": ["d2"],
+    "link": "https://docs.github.com/en/code-security/how-tos/secure-your-secrets/customize-leak-detection/define-custom-patterns",
+    "prereqs": ["Org owner or security manager in an org with Secret Protection", "A test repo in that org with push protection on"],
+    "steps": [
+      "In org **Settings > Advanced Security**, find **Custom patterns** and select **New pattern**.",
+      "Enter a pattern such as `acme_[a-z0-9]{32}` and a test string that should match.",
+      "Select **Save and dry run** on a few repos and review the sample matches.",
+      "Select **Publish pattern**, then **Enable** push protection for it.",
+      "Push a commit with a matching fake token to the test repo and confirm it is blocked."
+    ],
+    "verify": "The dry run listed your test string, the pattern shows as published, and the test push was blocked naming your pattern.",
+    "tips": ["Hyperscan regex: no lookbehind and no backreferences.", "Use the before-secret and after-secret fields to anchor the match instead of a longer regex.", "Limits: 100 patterns per repo, 500 per org or enterprise. A dry run shows up to 1,000 sample results."] },
+
+  { "id": "lab-supply-skills", "title": "Secure your repository's supply chain", "source": "GitHub Skills", "fromTraining": true, "requires": "free", "minutes": 60, "domains": ["d3"],
+    "link": "https://github.com/skills/secure-repository-supply-chain",
+    "prereqs": ["A GitHub account", "A public copy of the course repo"],
+    "steps": [
+      "Start the course and make a public copy.",
+      "Open **Insights > Dependency graph** and find a vulnerable dependency.",
+      "Read its Dependabot alert: advisory, severity, affected and patched versions, dismiss options.",
+      "Enable Dependabot security updates and merge the PR it opens.",
+      "Add a version updates config and watch the first update job under the Dependabot tab."
+    ],
+    "verify": "The alerts list shows at least one alert, a security update PR exists or is merged, and the dependency graph lists the project's packages.",
+    "tips": ["The dependency graph is on by default for public repos.", "The course repo is C#, so the alerts come from its NuGet manifests."] },
+
+  { "id": "lab-dependabot-yml", "title": "Write a dependabot.yml with groups and ignore rules", "source": "Extra lab", "requires": "free", "minutes": 30, "domains": ["d3"],
+    "link": "https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference",
+    "prereqs": ["A public repo you own with a `package.json`", "Dependabot alerts turned on in its settings"],
+    "steps": [
+      "Add `.github/dependabot.yml` using the snippet below and commit it.",
+      "Open **Insights > Dependency graph > Dependabot** and check the job for npm.",
+      "Look at the PRs it opens: grouped PRs carry the group name in the title.",
+      "On the dependency graph page select **Export SBOM**.",
+      "Open the SPDX JSON and find one package and its license."
+    ],
+    "code": "version: 2\nupdates:\n  - package-ecosystem: \"npm\"\n    directory: \"/\"\n    schedule:\n      interval: \"weekly\"\n    groups:\n      dev-minor-patch:\n        dependency-type: \"development\"\n        update-types: [\"minor\", \"patch\"]\n      security:\n        applies-to: security-updates\n        patterns: [\"*\"]\n    ignore:\n      - dependency-name: \"express\"\n        update-types: [\"version-update:semver-major\"]",
+    "verify": "The Dependabot tab shows a recent npm job, grouped PRs exist, and you have an SBOM file in SPDX JSON.",
+    "tips": ["A group without `applies-to` covers version updates only; add `applies-to: security-updates` for security PRs.", "`open-pull-requests-limit: 0` pauses version updates without deleting the file.", "The same SBOM comes from `GET /repos/{owner}/{repo}/dependency-graph/sbom`."] },
+
+  { "id": "lab-dep-review", "title": "Block risky dependencies with dependency review", "source": "Extra lab", "requires": "free", "minutes": 30, "domains": ["d3", "d5"],
+    "link": "https://github.com/actions/dependency-review-action",
+    "prereqs": ["A public repo with a `package.json` and a lockfile", "Admin on the repo, to create a ruleset"],
+    "steps": [
+      "Add the workflow below to the repo.",
+      "Open a PR that pins a vulnerable version, for example `\"lodash\": \"4.17.15\"`.",
+      "Read the failed check and the summary comment on the PR.",
+      "In **Settings > Rules > Rulesets**, create a branch ruleset for `main` that requires the `review` status check.",
+      "Retry the PR and confirm merge is blocked."
+    ],
+    "code": "on: pull_request\npermissions:\n  contents: read\n  pull-requests: write\njobs:\n  review:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v5\n      - uses: actions/dependency-review-action@v4\n        with:\n          fail-on-severity: high\n          allow-licenses: MIT, Apache-2.0, BSD-3-Clause, ISC\n          comment-summary-in-pr: always",
+    "verify": "The check fails with the vulnerable package named, and the Merge button is blocked by the ruleset.",
+    "tips": ["`pull-requests: write` is what lets the action post the summary comment.", "`allow-licenses` and `deny-licenses` can't be combined. The README marks `deny-licenses` deprecated, so prefer allow lists.", "Private repos need Code Security for dependency review."] },
+
+  { "id": "lab-remove-history", "title": "Remove a commit from history", "source": "Learn exercise", "fromTraining": true, "requires": "learn", "minutes": 20, "domains": ["d2", "d5"],
+    "link": "https://learn.microsoft.com/en-us/training/modules/manage-sensitive-data-security-policies/5-exercise",
+    "prereqs": ["Git installed locally", "`git filter-repo` installed, or the BFG Repo-Cleaner"],
+    "steps": [
+      "Launch the exercise from the Learn page. It creates your graded copy.",
+      "Read **About this exercise**, then follow **Instructions**.",
+      "Remove the sensitive commit, for example with `git filter-repo`, and force push.",
+      "Check the **Grading** workflow in the Actions tab. Don't edit `grading.yml`.",
+      "Exam angle: rotate the secret first, then clean history."
+    ],
+    "verify": "The Grading workflow run is green and `git log` no longer contains the secret.",
+    "tips": ["A force push rewrites history for everyone. Collaborators must re-clone or reset.", "Rewriting history doesn't close the secret alert. Rotate the secret, then close the alert as Revoked."] },
+
+  { "id": "lab-code-scanning", "title": "Configure code scanning", "source": "Learn exercise", "fromTraining": true, "requires": "learn", "minutes": 15, "domains": ["d4"],
+    "link": "https://learn.microsoft.com/en-us/training/modules/configure-code-scanning/5-exercise",
+    "prereqs": ["A GitHub account", "Launch from the Learn page so grading works"],
+    "steps": [
+      "Launch from the Learn page and read the README.",
+      "Set up code scanning with the triggers the instructions ask for.",
+      "Check the Grading workflow and retry until it passes."
+    ],
+    "verify": "The Grading workflow passes and the Security and quality tab lists a CodeQL analysis.",
+    "tips": ["If a step fails, the README's **Useful resources** links point at the exact docs page."] },
+
+  { "id": "lab-codeql-skills", "title": "Introduction to CodeQL", "source": "GitHub Skills", "requires": "free", "minutes": 30, "domains": ["d4"],
+    "link": "https://github.com/skills/introduction-to-codeql",
+    "prereqs": ["A GitHub account", "A public copy of the course repo"],
+    "steps": [
+      "Start the course and make a public copy.",
+      "Enable code scanning with CodeQL default setup and wait for the first analysis.",
+      "Open an alert and follow its data-flow path from source to sink with **Show paths**.",
+      "Try Copilot Autofix if it's offered.",
+      "Fix the code in a PR and watch the alert close."
+    ],
+    "verify": "At least one alert shows a data-flow path, and it moves to Fixed after your PR merges.",
+    "tips": ["Default setup runs on push to the default branch. The first scan can take several minutes.", "Alerts fixed by a merged PR close on the next scan of the default branch."] },
+
+  { "id": "lab-codeql-query", "title": "Reference a CodeQL query", "source": "Learn exercise", "fromTraining": true, "requires": "learn", "minutes": 15, "domains": ["d4", "d5"],
+    "link": "https://learn.microsoft.com/en-us/training/modules/code-scanning-with-github-codeql/7-exercise-reference-codeql-query",
+    "prereqs": ["Launch from the Learn page so grading works"],
+    "steps": [
+      "Launch from the Learn page.",
+      "In the workflow's `init` step, reference the requested query or suite with `queries:`.",
+      "Push and check the Grading workflow."
+    ],
+    "verify": "Grading passes and the `init` step carries a `queries:` value.",
+    "tips": ["`queries:` accepts a built-in suite (`security-extended`), a path in the repo, or another repo (`owner/repo/path@ref`).", "Prefix the value with `+` to run it in addition to the default queries."] },
+
+  { "id": "lab-codeql-matrix", "title": "Configure a CodeQL language matrix", "source": "GitHub Skills", "fromTraining": true, "requires": "free", "minutes": 20, "domains": ["d4"],
+    "link": "https://github.com/skills/configure-codeql-language-matrix",
+    "prereqs": ["A GitHub account", "A public copy of the course repo"],
+    "steps": [
+      "Start the course and make your copy.",
+      "Add a `strategy.matrix` with one entry per language.",
+      "Pass `${{ matrix.language }}` to `init`.",
+      "Set a per-language `category` on `analyze`.",
+      "Confirm each language shows as its own analysis on the **Tool status** page."
+    ],
+    "verify": "The Tool status page lists one CodeQL analysis per language.",
+    "tips": ["Without a per-language `category`, uploads for the same commit overwrite each other.", "`fail-fast: false` keeps the other languages running when one fails."] },
+
+  { "id": "lab-codeql-cli", "title": "Run the CodeQL CLI end to end", "source": "Extra lab", "requires": "local", "minutes": 45, "domains": ["d4", "d5"],
+    "link": "https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/scan-from-the-command-line",
+    "prereqs": ["The CodeQL CLI bundle, or `gh extension install github/gh-codeql`", "A token with the `security_events` scope, or a fine-grained token with Code scanning alerts: write", "A small JavaScript or Python repo you own, pushed to GitHub"],
+    "steps": [
+      "In the repo, run `codeql database create` (first command below).",
+      "Run `codeql database analyze` with the security-extended suite and write SARIF.",
+      "Open the SARIF in VS Code and read one result.",
+      "Upload with `codeql github upload-results` and find the alerts in the repo."
+    ],
+    "code": "codeql database create db --language=javascript --source-root .\ncodeql database analyze db \\\n  codeql/javascript-queries:codeql-suites/javascript-security-extended.qls \\\n  --format=sarif-latest --output=results.sarif\ncodeql github upload-results --repository=OWNER/REPO \\\n  --ref=refs/heads/main --commit=$(git rev-parse HEAD) \\\n  --sarif=results.sarif --sarif-category=cli",
+    "verify": "The upload command returns an analysis id, and the alerts appear in the repo's Security and quality tab under tool CodeQL.",
+    "tips": ["Run `codeql pack download codeql/javascript-queries` once so the analyze step can find the suite.", "`--sarif-category` keeps CLI uploads separate from any Actions uploads.", "The commit SHA and ref you pass must exist on GitHub."] },
+
+  { "id": "lab-sarif", "title": "Upload third-party SARIF with categories", "source": "Extra lab", "requires": "free", "minutes": 30, "domains": ["d4"],
+    "link": "https://docs.github.com/en/code-security/reference/code-scanning/sarif-files/sarif-support",
+    "prereqs": ["A public repo with a workflow you can edit", "Any scanner or linter that writes SARIF (for example ESLint with a SARIF formatter)"],
+    "steps": [
+      "Add a workflow step that runs the scanner and writes `results.sarif`.",
+      "Upload it with `github/codeql-action/upload-sarif@v4` and `category: my-linter`.",
+      "Add a second tool with a different category.",
+      "Confirm both tools appear in the tool filter on the alerts page.",
+      "Remove one category and see what happens to the earlier results."
+    ],
+    "code": "permissions:\n  security-events: write\n  contents: read\nsteps:\n  - uses: actions/checkout@v5\n  - run: npx eslint . -f @microsoft/eslint-formatter-sarif -o results.sarif || true\n  - uses: github/codeql-action/upload-sarif@v4\n    with:\n      sarif_file: results.sarif\n      category: eslint",
+    "verify": "Both tools appear in the tool filter, each with its own results.",
+    "tips": ["SARIF 2.1.0 only. Max 10 MB gzipped, 20 runs per file, 25,000 results per run (the top 5,000 are kept).", "A second upload with the same tool and category for a commit replaces the first."] },
+
+  { "id": "lab-sec-config", "title": "Create and enforce a security configuration", "source": "Extra lab", "requires": "org", "minutes": 30, "domains": ["d6"],
+    "link": "https://docs.github.com/en/code-security/how-tos/secure-at-scale/configure-organization-security/establish-complete-coverage/create-custom-configuration",
+    "prereqs": ["Org owner or security manager", "An org with Secret Protection or Code Security"],
+    "steps": [
+      "In org **Settings > Advanced Security > Configurations**, select **New configuration**.",
+      "Turn on Secret Protection, push protection and CodeQL default setup, then save.",
+      "On the **Repositories** tab, select a few repos and **Apply configuration**.",
+      "Edit the configuration: set **Use as default for newly created repositories** and **Enforce**.",
+      "As a repo admin, try to change one of those settings on an attached repo.",
+      "List configurations with `gh api /orgs/ORG/code-security/configurations`."
+    ],
+    "verify": "The Repositories tab shows your configuration as attached, and the repo-level setting you tried to change was locked.",
+    "tips": ["Enforce blocks REST changes too: the call looks successful but changes nothing.", "The default for new repos doesn't apply to repos transferred into the org."] },
+
+  { "id": "lab-campaign", "title": "Run a security campaign", "source": "Extra lab", "requires": "org", "minutes": 30, "domains": ["d5"],
+    "link": "https://docs.github.com/en/code-security/how-tos/manage-security-alerts/remediate-alerts-at-scale/creating-managing-security-campaigns",
+    "prereqs": ["Org owner or security manager", "Repos in the org with open code scanning alerts (the CodeQL Skills repo works)"],
+    "steps": [
+      "Open the org's **Security and quality** tab and select **Campaigns**.",
+      "Create a campaign from a template or from a CWE filter.",
+      "Set the name, campaign managers, due date and contact link, then launch.",
+      "As a developer, open a campaign alert and generate a Copilot Autofix.",
+      "Merge the fix and watch campaign progress update."
+    ],
+    "verify": "The campaign page shows the alert count, due date and manager, and at least one alert closed after the fix merged.",
+    "tips": ["Up to 1,000 alerts per campaign and 10 active campaigns.", "Campaign managers must be org owners or security managers."] },
+
+  { "id": "lab-api", "title": "Work with alerts through the API", "source": "Extra lab", "requires": "free", "minutes": 30, "domains": ["d5", "d6"],
+    "link": "https://docs.github.com/en/rest/code-scanning/code-scanning",
+    "prereqs": ["GitHub CLI signed in with `gh auth login`", "A repo from an earlier lab with alerts"],
+    "steps": [
+      "List open code scanning, Dependabot and secret scanning alerts with the commands below.",
+      "Dismiss one code scanning alert through the API with a reason and comment.",
+      "Find the dismissed alert in the UI and read the comment.",
+      "Read the webhook docs for `code_scanning_alert`, `secret_scanning_alert` and `dependabot_alert`."
+    ],
+    "code": "gh api \"/repos/OWNER/REPO/code-scanning/alerts?state=open\"\ngh api \"/repos/OWNER/REPO/dependabot/alerts?state=open\"\ngh api \"/repos/OWNER/REPO/secret-scanning/alerts\"\ngh api -X PATCH /repos/OWNER/REPO/code-scanning/alerts/1 \\\n  -f state=dismissed -f dismissed_reason=\"used in tests\" \\\n  -f dismissed_comment=\"Test helper only\"",
+    "verify": "The dismissed alert shows state Dismissed and your comment in the UI.",
+    "tips": ["Code scanning `dismissed_reason` values: `false positive`, `won't fix`, `used in tests`, `mitigated`.", "Org-wide lists exist too: `/orgs/{org}/code-scanning/alerts`, `/orgs/{org}/dependabot/alerts`, `/orgs/{org}/secret-scanning/alerts`."] },
+
+  { "id": "lab-secure-code-game", "title": "Secure Code Game (optional)", "source": "GitHub Skills", "requires": "free", "minutes": 60, "domains": ["d4", "d5"],
+    "link": "https://github.com/skills/secure-code-game",
+    "prereqs": ["A GitHub account; Codespaces works best"],
+    "steps": [
+      "Open it in a Codespace and play one season.",
+      "For each bug, name its CWE.",
+      "Name the kind of CodeQL query that would catch it."
+    ],
+    "verify": "You can name a CWE for every level you played.",
+    "tips": ["Good practice for reading data-flow alerts: every level is a source-to-sink problem."] }
+]

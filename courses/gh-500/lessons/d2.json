@@ -1,0 +1,266 @@
+[
+  { "id": "l-secret-enable", "domain": "d2", "objectives": ["d2-0-0", "d2-0-1", "d2-0-2"],
+    "title": "Turn on Secret Protection", "minutes": 10,
+    "goal": "Enable secret scanning features for one repo and for a whole org, and know what gets scanned.",
+    "points": [
+      "**Repo:** Settings > Advanced Security > Secret Protection > Enable. Then toggle push protection, validity checks, generic patterns and AI-detected secrets. A repo admin can disable it again.",
+      "**Org or enterprise:** put the features in a **security configuration** and apply it to repos, set it as the default for new repos, and enforce it. That's the at-scale path.",
+      "**Scope:** full Git history on all branches, plus issues (titles, descriptions and comments, including closed ones), PR text and comments, Discussions, wikis and secret gists.",
+      "**Public repos:** secret scanning is free and on. **Private and internal repos** need Secret Protection on Team or Enterprise Cloud. User-owned repos get it only with EMU or GHES.",
+      "Repository push protection is off until someone turns it on: a repo admin, org owner, security manager or enterprise owner."
+    ],
+    "trap": "Partner alerts for leaks in public repos go to the token's provider. They don't appear in the repo's alert list, and admins aren't notified.",
+    "tryIt": "Open **Settings > Advanced Security** on a public repo you own and turn on push protection.",
+    "details": [
+      { "title": "Enabling at each level", "table": { "head": ["Level", "Where and what"], "rows": [
+        ["Repository", "Settings > Advanced Security > Secret Protection > Enable, then Enable Secret Protection. A Disable button that's already there means an org configuration turned it on"],
+        ["Organization", "A custom security configuration. Secret Protection options in it: Validity checks, Extended metadata, Generic patterns, Scan for AI-detected secrets, Push protection, Bypass privileges, Prevent direct alert dismissals"],
+        ["Organization defaults", "Use as default for newly created repositories: Public, Private and internal, or All repositories. Transferred repos must be configured by hand. Enforce configuration blocks repo-level changes"],
+        ["Enterprise", "Policies > Advanced Security: \"Repository administrators can enable or disable PRODUCT\" and \"AI detection in secret scanning\". Disallowing never disables repos already using it; org owners and security managers can always enable"],
+        ["Personal account", "User-owned repos get secret scanning only with Enterprise Cloud (EMU) or GitHub Enterprise Server with Secret Protection"]
+      ] } },
+      { "title": "What gets scanned, and what doesn't", "points": [
+        "Everything in Git history on every branch, plus issues, pull requests, Discussions, wikis and secret gists. GitHub periodically rescans when new secret types are added.",
+        "The same secret repeated in one file creates one alert. Paired credentials (an AWS access key and its secret key) alert only when both are in the same file.",
+        "Only the most recent token formats are matched for some providers; Azure Storage keys only when recently created.",
+        "No per-file size limit is documented for scanning. The only size rule is push protection skipping public-repo pushes over 50 MB.",
+        "Partner scanning also covers public **npm packages**, not only repositories."
+      ] },
+      { "title": "Partner alerts vs user alerts", "points": [
+        "**Partner program:** a partner gives GitHub a regex and a public endpoint. GitHub POSTs JSON with the token, type, URL and source (content, commit, npm, action_logs), signed with ECDSA so the partner can verify it came from GitHub.",
+        "Partner alerts go straight to the provider for leaks in public repos; they don't appear in the Security tab and repository admins aren't notified. You can't change partner-pattern scanning on public repos.",
+        "**User alerts** are what Secret Protection shows in the repo. The supported-patterns table has columns Partner, User alert, Push protection, Validity check, Metadata and Base64.",
+        "Validity checks aren't supported for generic patterns. Push protection and validity checks aren't supported for AI-detected passwords.",
+        "**Public monitoring** (enterprise) scans public repos, including PR comments, for secrets tied to enterprise members or verified-domain emails, and reports on the enterprise's Public monitoring page."
+      ] },
+      { "title": "Historical scan and exclusions", "points": [
+        "When you enable scanning, a **historical scan** runs. Org owners, enterprise owners and security managers are notified when it finishes, even if nothing is found. Commit authors are not notified for historical results.",
+        "`.github/secret_scanning.yml` with `paths-ignore` excludes paths. Only the first 1,000 entries apply, a file over 1 MB is ignored entirely, and push protection also skips excluded paths.",
+        "Alerts in excluded paths close automatically with the resolution \"ignored by configuration\".",
+        "Generic pattern alerts need generic or AI-detected scanning turned on first; they sit in a separate list."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 3 lists the settings that appear after enabling: Validity checks, Non-provider patterns, Scan for generic passwords, Push protection, Delegated bypass rules, Alert dismissal rules, Custom patterns.",
+        "Module 3 says enabling at org level turns secret scanning on by default for all private repos where GHAS is enabled. Current docs route org enablement through security configurations; there's no documented org-level \"Enable all\" for secret scanning.",
+        "Module 3: anyone with read access can use a committed secret with your privileges, so treat any committed secret as compromised.",
+        "The features page says push protection is \"enabled by default on public repositories\" while the concept page says it's off by default. Either framing can appear; the safe answer is that a repo admin or owner turns it on."
+      ] }
+    ],
+    "lab": "lab-secret-skills",
+    "sources": ["https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning", "https://docs.github.com/en/code-security/concepts/secret-security/about-alerts", "https://docs.github.com/en/code-security/how-tos/secure-your-secrets/detect-secret-leaks/enable-secret-scanning", "https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning-for-partners", "https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns", "https://docs.github.com/en/code-security/how-tos/secure-your-secrets/customize-leak-detection/exclude-folders-and-files", "https://docs.github.com/en/enterprise-cloud@latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-code-security-and-analysis-for-your-enterprise", "https://learn.microsoft.com/en-us/training/modules/configure-use-secret-scanning-github-repository/3-configure-secret-scanning"] },
+
+  { "id": "l-push-protection", "domain": "d2", "objectives": ["d2-1-0"],
+    "title": "Push protection and bypass", "minutes": 10,
+    "goal": "Explain what push protection blocks, how bypass works, and what each bypass reason does to the alert.",
+    "points": [
+      "Push protection blocks supported secrets in `git push`, the web editor, file uploads and the REST API, before they reach the repo.",
+      "**It's used in tests** and **It's a false positive** create a closed alert with that resolution and notify nobody. **I'll fix it later** creates an open alert and notifies the commit author and repo admins.",
+      "After **Allow me to push this secret**, push again within **3 hours**. The bypass URL only works for the user who pushed; anyone else gets a 404.",
+      "**Push protection for users** (GitHub.com, on by default) blocks your pushes to public repos. It asks no reason and creates no alert unless the repo has push protection too.",
+      "By default anyone with write access can bypass. Delegated bypass limits that to a list."
+    ],
+    "trap": "AI-detected passwords get no push protection. Generic patterns get it only if you turn it on.",
+    "tryIt": "In a test repo with push protection on, push a fake token and read the block message.",
+    "details": [
+      { "title": "Where it blocks", "points": [
+        "`git push` from any client, commits made in the web UI (one secret shown at a time), file uploads, REST calls that create a blob or create or update file contents (the API answers 409), and MCP server pushes to public repos.",
+        "A secret that already has an open alert in the repo isn't blocked again.",
+        "Only the most recent versions of a token format are blocked; Azure Storage keys only when recently created.",
+        "Delegated bypass also applies to files created, edited or uploaded on GitHub.com, not only to `git push`."
+      ] },
+      { "title": "Limits", "points": [
+        "At most **5 secrets** are shown per blocked push.",
+        "A push that contains more than **1,000 existing secrets** isn't blocked.",
+        "Pushes to public repos over **50 MB** are skipped; an oversized push can time out and is scanned afterwards. A bypass request with no commit or path listed means the scan timed out."
+      ] },
+      { "title": "Bypass outcomes", "table": { "head": ["Reason chosen", "Alert created", "Who is told"], "rows": [
+        ["It's used in tests", "Closed, resolved as used in tests", "Nobody"],
+        ["It's a false positive", "Closed, resolved as false positive", "Nobody"],
+        ["I'll fix it later", "Open", "Commit author and repository admins; owners, security managers and admins who opted in get an email with a link and the reason"]
+      ] } },
+      { "title": "Bypass through the API and the audit log", "points": [
+        "REST: `POST /repos/{owner}/{repo}/secret-scanning/push-protection-bypasses` with `reason` (`false_positive`, `used_in_tests`, `will_fix_later`) and `placeholder_id`. The caller must be the original author; classic tokens need the `repo` scope.",
+        "Audit log: `secret_scanning_push_protection.bypass` for each bypass; `repository_secret_scanning_push_protection.enable` / `disable`; `org_secret_scanning_push_protection_bypass_list.add` / `remove` / `enable` / `disable`.",
+        "Every bypass is an audit log entry and, for the opted-in roles, an email. Review them regularly; the training calls this out as enterprise practice."
+      ] },
+      { "title": "Enabling and tuning", "points": [
+        "Repo: Settings > Advanced Security > Secret Protection > Push protection > Enable (Secret Protection must already be on). Org or enterprise: a custom configuration with Secret scanning > Push protection: Enabled.",
+        "Orgs can choose which secret types push protection blocks under Global settings > Pattern configurations (public preview), and can add a resource link to the block message so contributors know who to ask.",
+        "Push protection for users lives at Settings > Code security > User > \"Push protection for yourself\".",
+        "Contributors are prompted in the IDE or CLI with remediation guidance: remove the secret from the push, or bypass with a reason."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 3's enterprise guidance: require push protection on every repo covered by Secret Protection, restrict bypass to security managers, review teams or approved custom roles, and review bypass events regularly.",
+        "Module 3 says bypass requests, approve and deny decisions and justifications are reviewed in the repository's Security tab (today: Security and quality > Requests).",
+        "Module 7's feature table shows push protection as a Secret Protection feature only; the docs give public repos push protection free."
+      ] }
+    ],
+    "lab": "lab-secret-skills",
+    "sources": ["https://docs.github.com/en/code-security/concepts/secret-security/push-protection", "https://docs.github.com/en/code-security/how-tos/secure-your-secrets/work-with-leak-prevention/push-protection-on-the-command-line", "https://docs.github.com/en/code-security/how-tos/secure-your-secrets/work-with-leak-prevention/push-protection-in-the-github-ui", "https://docs.github.com/en/code-security/reference/secret-security/secret-scanning-scope", "https://docs.github.com/en/rest/secret-scanning/secret-scanning", "https://docs.github.com/en/code-security/how-tos/secure-at-scale/configure-organization-security/establish-complete-coverage/configure-global-settings"] },
+
+  { "id": "l-validity", "domain": "d2", "objectives": ["d2-1-1"],
+    "title": "Validity checks and alert priority", "minutes": 7,
+    "goal": "Use validity checks and secret type to decide which secret alert to handle first.",
+    "points": [
+      "Validity checks ask the provider whether a token still works. Status: **active**, **inactive** or **unknown** (shown as \"Possibly active secret\").",
+      "Turn on at **Settings > Advanced Security > Secret Protection > Validity checks**, by REST, or in a security configuration for an org.",
+      "You can also run a check on demand with **Verify secret** on the alert. GitHub's own tokens are validity-checked by default.",
+      "**Generic** alerts (non-provider patterns and AI-detected passwords) sit in a separate list, capped at 5,000 per repo. Provider patterns are higher confidence.",
+      "Triage order: active provider secrets, then unknown, then inactive, then generic."
+    ],
+    "trap": "An inactive token is lower risk but the alert stays open. Close it, usually as Revoked.",
+    "tryIt": "Open any secret alert in a repo with Secret Protection and find its validity status.",
+    "details": [
+      { "title": "How a check runs", "points": [
+        "GitHub periodically sends the secret to the issuer using GET requests against the least intrusive endpoints, sometimes with the host or URL it found alongside the token.",
+        "**active:** confirmed live; remediate first. **inactive:** the token no longer works; confirm no unauthorized access already happened. **unknown:** the provider isn't supported or the check failed.",
+        "The on-demand Verify secret button appears once validity checks for partner patterns are enabled. Validity checks for partner patterns need Team or Enterprise with Secret Protection."
+      ] },
+      { "title": "Metadata, labels and filters", "points": [
+        "**Extended metadata** (public preview) needs validity checks on and today covers OpenAI API, Google OAuth, Slack and Replicate tokens. GitHub token metadata such as last used isn't available for revoked tokens and usually not for public repos.",
+        "Labels on an alert: **public leak** (the same secret was also found publicly; links to the locations) and **multi-repo** (the same secret appears in other repos of the org or enterprise).",
+        "List filters: `validity:active|inactive|unknown`, `is:publicly-leaked`, `is:multi-repository`. REST: `validity`, `is_publicly_leaked`, `is_multi_repo`.",
+        "The training names the alert list filters Bypassed, Validity, Secret type and Provider."
+      ] },
+      { "title": "Generic alerts", "points": [
+        "Generic alerts show only the first five locations (the first one for AI-detected passwords) and are left out of security overview's summary views.",
+        "Generic patterns support configurable push protection and no validity checks. AI-detected passwords support neither.",
+        "AI detection skips paths containing \"test\", \"mock\" or \"spec\" and skips common source extensions such as .cs, .go, .java, .js, .py and .ts."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 3: validity checks say whether a token is active and, when possible, whether it was ever active. Prioritize active secrets before auditing logs for already-revoked keys."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/code-security/concepts/secret-security/validity-checks", "https://docs.github.com/en/code-security/tutorials/remediate-leaked-secrets/evaluating-alerts", "https://docs.github.com/en/code-security/concepts/secret-security/about-alerts", "https://docs.github.com/en/code-security/responsible-use/security-and-quality-ai-features", "https://learn.microsoft.com/en-us/training/modules/configure-use-secret-scanning-github-repository/2-what-is-secret-scanning"] },
+
+  { "id": "l-secret-lifecycle", "domain": "d2", "objectives": ["d2-2-0", "d2-2-1", "d2-2-2"],
+    "title": "Secret alert lifecycle and remediation", "minutes": 10,
+    "goal": "Handle a leaked secret in the right order and close the alert correctly.",
+    "points": [
+      "An alert opens when scanning finds a secret, or when someone bypasses push protection with I'll fix it later.",
+      "Alerts don't close when you delete the token from code. Someone resolves them with a reason: Revoked, False positive, Used in tests, Won't fix.",
+      "**Order:** revoke or rotate with the provider, check for misuse, remove it from code, then close as Revoked.",
+      "Rewriting history with `git filter-repo` or BFG stops the secret spreading but doesn't make it safe. It's already exposed. The docs call history rewriting \"often unnecessary if the credential has already been revoked\".",
+      "For secrets found by incremental scans, people with alert access are notified per their settings and the commit author is always told. Historical scans notify owners and security managers only."
+    ],
+    "trap": "The first step after a live key leaks is always rotate or revoke, never rewrite history.",
+    "tryIt": "Write the four remediation steps from memory.",
+    "details": [
+      { "title": "Remediation, step by step", "points": [
+        "A compromised GitHub personal access token: delete the token, create a new one, update the services that used it.",
+        "Any other secret (the training's order): verify the committed secret is valid, create a new secret, update the services, then delete the old one. The replacement goes live before the old one dies.",
+        "Check provider logs for use of the secret while it was exposed. Finish incident response before closing the alert.",
+        "Then resolve the alert as Revoked. Use False positive only when the string was never a real secret, and Used in tests only for dummy credentials that never worked."
+      ] },
+      { "title": "Rewriting history when you must", "points": [
+        "**BFG Repo-Cleaner:** `java -jar bfg.jar --delete-files secrets.txt` or `--replace-text passwords.txt`. **git filter-repo** is the maintained alternative; `git filter-branch` is the legacy command.",
+        "After rewriting: `git reflog expire --expire=now --all`, `git gc --prune=now --aggressive`, then `git push origin --force --all` (and tags).",
+        "Collaborators must re-clone or reset; their old clones still hold the secret. Forks keep it too.",
+        "On a public repo, cached views and forks persist. Ask GitHub Support to flush cached views, giving the repo name, the commits or files, and confirmation that history was rewritten.",
+        "Prevention: `.gitignore` for env files, a secret manager or GitHub Actions secrets, and periodic scans (the training names GitGuardian and truffleHog)."
+      ] },
+      { "title": "Notifications", "points": [
+        "Incremental scans notify: users with alert access per their notification preferences, org and enterprise owners who administer the repo, the commit author regardless of preferences, and alert assignees.",
+        "Email needs three things: you watch the repository with All Activity or custom Security alerts, and you chose email under Settings > Notifications > Subscriptions > Watching.",
+        "Historical scans (the first full scan after enabling) notify org owners, enterprise owners and security managers when they finish, even with zero findings. Commit authors aren't told."
+      ] },
+      { "title": "The alert list", "points": [
+        "States are only **open** and **resolved**. Resolution values: `false_positive`, `wont_fix`, `revoked`, `used_in_tests`; filter-only values `pattern_edited` and `pattern_deleted`; the UI also shows hidden-by-config.",
+        "Filters: `is:open|closed|publicly-leaked|multi-repository`, `bypassed:true`, `provider:`, `secret-type:`, `validity:`, `resolution:false-positive|revoked|used-in-tests|wont-fix|hidden-by-config|pattern-edited|pattern-deleted`, `results:default|generic`, `sort:created-desc`.",
+        "A resolution comment can't be updated or deleted once saved."
+      ] },
+      { "title": "REST, webhooks and audit", "points": [
+        "Endpoints: `GET /orgs/{org}/secret-scanning/alerts`; `GET` and `PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}`; `GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}/locations`; `GET /repos/{owner}/{repo}/secret-scanning/scan-history`.",
+        "`PATCH` with `state: resolved` requires a `resolution`. 400 for an invalid comment or unchanged resolution; 403 when delegated dismissal needs a reviewer; repo endpoints 404 when the repo is public or scanning is off.",
+        "Query params: `secret_type` and `providers` filters can't be combined; `hide_secret`; `per_page` up to 100. Location types include commit, wiki_commit, issue title, body and comment, discussion title, body and comment, and pull request title, body, comment, review and review comment.",
+        "Webhook `secret_scanning_alert` actions: created, resolved, reopened, validated, publicly_leaked, assigned, unassigned, metadata_created, metadata_removed. Related events: `secret_scanning_alert_location`, `secret_scanning_scan`.",
+        "Audit log: `secret_scanning_alert.create` / `resolve` / `reopen` / `revoke` / `validate` / `report` / `public_leak` / `assign` / `delete`, and `secret_scanning_scan.completed`."
+      ] }
+    ],
+    "lab": "lab-remove-history",
+    "sources": ["https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-secret-scanning-alerts/monitoring-alerts", "https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-secret-scanning-alerts/resolving-alerts", "https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning", "https://docs.github.com/en/rest/secret-scanning/secret-scanning", "https://docs.github.com/en/webhooks/webhook-events-and-payloads", "https://learn.microsoft.com/en-us/training/modules/manage-sensitive-data-security-policies/2-set-security-policies", "https://learn.microsoft.com/en-us/training/modules/configure-use-secret-scanning-github-repository/4-use-secret-scanning"] },
+
+  { "id": "l-delegated", "domain": "d2", "objectives": ["d2-3-0", "d5-3-0"],
+    "title": "Delegated bypass and delegated dismissal", "minutes": 10,
+    "goal": "Tell the two delegated controls apart and know who reviews each.",
+    "points": [
+      "**Delegated bypass** (push protection): only the bypass list can push past a block. Everyone else files a request, which reviewers have **7 days** to decide.",
+      "Org owners and security managers can always bypass. Add roles or teams to the bypass list, or exempt service accounts (which skips push protection entirely for them).",
+      "**Delegated alert dismissal:** writers must request to dismiss an alert. Owners and security managers review. Secret scanning requests expire after **1 week**.",
+      "Dismissal delegation covers code scanning and secret scanning on GitHub.com and GHES 3.17+, and Dependabot on GHES 3.21+.",
+      "Custom roles can review either one, with permissions such as \"Review and manage secret scanning bypass requests\" or \"Review and manage secret scanning alert dismissal requests\"."
+    ],
+    "trap": "Bypass is about pushing a secret. Dismissal is about closing an alert. Same idea, different controls.",
+    "tryIt": "Say what happens when a developer who isn't on the bypass list hits a block.",
+    "details": [
+      { "title": "Tell them apart", "table": { "head": ["", "Delegated bypass", "Delegated dismissal"], "rows": [
+        ["Controls", "Pushing a blocked secret", "Closing an alert (secret scanning, code scanning, Dependabot)"],
+        ["Setting", "Push protection > Who can bypass push protection for secret scanning > Specific roles or teams; in a configuration, Bypass privileges > Specific actors", "Prevent direct alert dismissals (repo page, per product; in a configuration under Secret scanning, Code scanning, Dependency scanning)"],
+        ["Who requests", "Anyone not on the bypass list", "Users with write access"],
+        ["Who reviews", "Org owners, security managers, bypass-list members, custom roles with \"Review and manage secret scanning bypass requests\"", "Org owners, security managers, custom roles with the dismissal-review permission for that alert type"],
+        ["Expiry", "7 days", "1 week (documented for secret scanning)"],
+        ["Where to review", "Repo Security and quality > Requests > Push protection bypass, or org security overview", "Org or enterprise Security and quality > Requests"],
+        ["Audit events", "`secret_scanning_push_protection_request.request` / `approve` / `deny` / `cancel` / `complete`", "`code_scanning.alert_closure_requested` / `approved` / `denied`; `secret_scanning_closure_request.approve` / `deny`; `dependabot_closure_request.create` / `approve` / `deny` / `cancel`"]
+      ] } },
+      { "title": "Delegated bypass: setup", "points": [
+        "Repo: Settings > Advanced Security > Push protection > Who can bypass push protection for secret scanning > Specific roles or teams, then Bypass list > Add role or team. The actor menu offers **Exempt**.",
+        "The bypass list can hold individual users, teams, default roles and custom org roles. Secret (hidden) teams can't be added. A higher-level configuration disables the repo-level settings.",
+        "An **exemption** skips push protection entirely for that actor, which the docs warn \"may lead to leaked secrets\". Use it for migration bots and service accounts only.",
+        "Members of the bypass list still give a justification when they bypass; everyone else submits a request."
+      ] },
+      { "title": "Delegated bypass: the request lifecycle", "points": [
+        "Reviewers get an email with a link. Approval lets the commit through, and future commits containing the same secret. Denial means the secret must be removed from the push. The requester is emailed the decision.",
+        "Request statuses: Open, Completed, Denied, Cancelled, Expired. Filter the queue by approver, requester, timeframe and status.",
+        "REST: `GET /repos/{owner}/{repo}/bypass-requests/secret-scanning` (also at org and enterprise level); `PATCH` a request with `status` approve or reject and a message up to 2048 characters. `bypass_reason` is `used_in_tests`, `false_positive` or `fix_later`.",
+        "GitHub Apps can review requests with the \"Organization bypass requests for secret scanning\" permission (GHES 3.19+)."
+      ] },
+      { "title": "Delegated dismissal: setup and review", "points": [
+        "Turn it on per product on the repo's Advanced Security page, or in a configuration. An enforced configuration locks the setting at repo level.",
+        "Reviewers use Security and quality > Requests > Secret scanning, Code scanning or Dependabot alert dismissal > Review request > Approve or Deny > Submit review. Approval dismisses the alert; denial leaves it open.",
+        "A custom role needs the org permission \"Review and manage secret scanning alert dismissal requests\" (security managers have it by default) plus repo permissions to view, dismiss and reopen the alerts. Enterprise-level review needs owner or security manager of the source org, or the custom role.",
+        "REST: `/dismissal-requests/secret-scanning`, `/code-scanning` and `/dependabot` at org and repo level; `PATCH` with `status` approve or deny and a message up to 2048 characters. Statuses: pending, approved, denied, expired.",
+        "Only the secret scanning page states a 1-week expiry; code scanning and Dependabot requests expose an `expires_at` field."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/code-security/concepts/secret-security/delegated-bypass", "https://docs.github.com/en/code-security/concepts/secret-security/bypass-requests", "https://docs.github.com/en/enterprise-cloud@latest/code-security/how-tos/secure-your-secrets/manage-bypass-requests/enable-delegated-bypass", "https://docs.github.com/en/code-security/concepts/security-at-scale/delegated-alert-dismissal", "https://docs.github.com/en/code-security/how-tos/manage-security-alerts/remediate-alerts-at-scale/review-alert-dismissal-requests", "https://docs.github.com/en/enterprise-cloud@latest/rest/secret-scanning/delegated-bypass"] },
+
+  { "id": "l-custom-patterns", "domain": "d2", "objectives": ["d2-3-1", "d2-3-2"],
+    "title": "Custom patterns, exclusions and recipients", "minutes": 10,
+    "goal": "Detect your own token formats, and control what's scanned and who hears about it.",
+    "points": [
+      "Custom patterns are regexes at **repo** (up to 100), **org** or **enterprise** (up to 500) level. They need Secret Protection.",
+      "**Save and dry run** shows up to 1,000 sample matches without creating alerts. At org level, run it on all repos or up to 10 selected repos, and only where you have admin access.",
+      "**Generate with AI** writes the regex from a description and examples. No Copilot license needed.",
+      "Push protection for a pattern can be turned on only after a dry run and publish, and only blocks in repos with push protection on.",
+      "Exclude paths with `paths-ignore` in `.github/secret_scanning.yml`. Add alert recipients by granting alert access in repo settings."
+    ],
+    "trap": "You can only dry run on repos where you have admin access, and at enterprise level only the pattern's creator can edit or dry run it.",
+    "tryIt": "Write a regex for a made-up token: `acme_` followed by 32 lowercase letters or digits.",
+    "snippet": { "label": ".github/secret_scanning.yml", "code": "paths-ignore:\n  - \"docs/samples/**\"\n  - \"test/fixtures/**\"" },
+    "details": [
+      { "title": "The pattern form", "points": [
+        "Engine: **Hyperscan**, a subset of PCRE syntax. Lookbehind, backreferences and Hyperscan option modifiers aren't supported.",
+        "Fields: Pattern name, Secret format (the regex), More options, Test string. Buttons: New pattern, Save and dry run, Publish pattern, then Enable (push protection).",
+        "More options: **Before secret** (default `\\A|[^0-9A-Za-z]`), **After secret** (default `\\z|[^0-9A-Za-z]`), and **Additional match requirements** with Must match and Must not match expressions. Use these to anchor a match instead of a longer regex.",
+        "Generate with AI: fill in \"I want a regular expression that\" and \"Examples of what I'm looking for\", select Generate suggestions, then Use results."
+      ] },
+      { "title": "Levels, who, limits", "table": { "head": ["Level", "Path and rules"], "rows": [
+        ["Repository (admin)", "Settings > Advanced Security > Custom patterns. Up to 100 patterns. Dry run against that repo"],
+        ["Organization (owner, security manager)", "Settings > Advanced Security > Global settings > Custom patterns. Up to 500. Dry run on all repos or up to 10 selected, only where you have admin"],
+        ["Enterprise (owner)", "Policies > Advanced Security > Security features > Secret scanning custom patterns. Up to 500. Only the creator can edit or dry run; dry run on up to 10 repos; an enterprise owner needs the org owner role to dry run in that org; the pattern scans only orgs with Secret Protection"],
+        ["Push protection per pattern", "Enable appears after a successful dry run and Publish pattern. Enterprise patterns need push protection enabled at enterprise level. The docs warn it can be disruptive for common patterns"]
+      ] } },
+      { "title": "After publishing", "points": [
+        "A published pattern scans the full history of every branch, and alerts go to org owners and repo admins like built-in patterns.",
+        "Editing or deleting a pattern resolves its existing alerts as `pattern_edited` or `pattern_deleted`.",
+        "Audit log: `repository_secret_scanning_custom_pattern.create` / `update` / `delete` / `publish`, and the `org_` equivalents."
+      ] },
+      { "title": "Exclusions and recipients", "points": [
+        "`.github/secret_scanning.yml`: only the first 1,000 `paths-ignore` entries apply; a file over 1 MB is ignored entirely; alerts in excluded paths auto-close as ignored by configuration; push protection also skips excluded paths.",
+        "Recipients: grant alert access under Settings > Advanced Security > Access to alerts, to people or teams that already have write. Security managers and org owners who administer the repo are notified anyway.",
+        "Org owners can set the resource link shown in push protection blocks, and choose which pattern types block, under Global settings."
+      ] }
+    ],
+    "lab": "lab-custom-pattern",
+    "sources": ["https://docs.github.com/en/code-security/concepts/secret-security/custom-patterns", "https://docs.github.com/en/code-security/reference/secret-security/custom-patterns", "https://docs.github.com/en/code-security/how-tos/secure-your-secrets/customize-leak-detection/define-custom-patterns", "https://docs.github.com/en/code-security/how-tos/secure-your-secrets/customize-leak-detection/exclude-folders-and-files", "https://docs.github.com/en/enterprise-cloud@latest/code-security/how-tos/secure-your-secrets/customize-leak-detection/generating-regular-expressions-for-custom-patterns-with-ai"] }
+]

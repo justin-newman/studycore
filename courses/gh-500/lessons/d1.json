@@ -1,0 +1,254 @@
+[
+  { "id": "l-suites", "domain": "d1", "objectives": ["d1-0-0", "d1-0-1", "d1-0-2", "d2-0-2"],
+    "title": "The two security products and what's free", "minutes": 10,
+    "goal": "Name which product each security feature belongs to, and what public repos get free.",
+    "points": [
+      "**GitHub Secret Protection:** secret scanning user alerts, push protection, AI-detected secrets, generic patterns, custom patterns, validity checks, delegated bypass and delegated alert dismissal.",
+      "**GitHub Code Security:** code scanning, the CodeQL CLI, Copilot Autofix, AI Scan, dependency review and custom Dependabot auto-triage rules. Security campaigns and security overview come with either product.",
+      "**Free on every plan:** dependency graph, SBOM export, Dependabot alerts, security and version updates, malware alerts, security advisories, rulesets, partner alerts, push protection for users.",
+      "**Public repos** also get code scanning, the CodeQL CLI, Copilot Autofix, secret scanning, push protection and dependency review free. Custom patterns, delegated bypass, campaigns and security overview still need a product.",
+      "**Buying:** only GitHub Team and Enterprise can buy either product. Both bill per unique active committer: a member whose commit was pushed to a covered repository in the last 90 days, whenever it was authored."
+    ],
+    "trap": "Supply chain security is mostly free. When a question asks what Code Security adds for dependencies, the answer is dependency review or custom auto-triage rules.",
+    "tryIt": "Open **Settings > Advanced Security** on one of your repos and note which features are on and which need a product.",
+    "details": [
+      { "title": "Feature by feature", "table": { "head": ["Feature", "Free", "Secret Protection", "Code Security"], "rows": [
+        ["Dependency graph, SBOM export, Advisory Database", "Yes", "", ""],
+        ["Dependabot alerts, security updates, version updates, malware alerts (GHES 3.22+)", "Yes", "", ""],
+        ["GitHub presets for Dependabot auto-triage", "Yes", "", ""],
+        ["Security policy, repository security advisories, private vulnerability reporting", "Yes", "", ""],
+        ["Rulesets; artifact attestations", "Yes (private attestations need Enterprise Cloud)", "", ""],
+        ["Secret scanning partner alerts", "Yes (public repos)", "", ""],
+        ["Push protection for users", "Yes (GitHub.com)", "", ""],
+        ["Secret scanning user alerts, repository push protection", "Public repos", "Yes", ""],
+        ["AI-detected secrets, generic patterns, custom patterns, validity checks", "", "Yes", ""],
+        ["Delegated bypass, delegated alert dismissal", "", "Yes", "Code scanning dismissal"],
+        ["Code scanning, CodeQL CLI, Copilot Autofix", "Public repos", "", "Yes"],
+        ["AI Scan, dependency review, custom auto-triage rules", "Dependency review and custom rules on public repos", "", "Yes"],
+        ["Security campaigns, security overview", "", "Yes", "Yes"]
+      ] } },
+      { "title": "Availability nuances", "points": [
+        "User-owned repositories get secret scanning only with Enterprise Cloud (EMU) or GitHub Enterprise Server with Secret Protection.",
+        "Enterprise owners can disable Advanced Security across every repository and prevent it being re-enabled.",
+        "The features page lists the CodeQL CLI and dependency review as enabled by default on public repositories, alongside code scanning and secret scanning.",
+        "Two free assessments: the **secret risk assessment** (org owners and security managers; total secrets, public leaks, preventable leaks, secret categories) and the **code security risk assessment** (up to 20 most active repos; what Autofix could fix)."
+      ] },
+      { "title": "Billing", "points": [
+        "One license per unique active committer across all repositories, organizations and both products. GitHub App bots are ignored. Repos migrated with GEI count only pushes made after migration.",
+        "A user who stays in the org keeps consuming a license for 90 days after their last pushed commit. On volume billing, removing the user from the organization frees the license within 24 hours.",
+        "**Metered** billing (Enterprise Cloud, and GHES 3.13+ through GitHub Connect): monthly, no license limit, no overage state, each product enabled independently. GHES usage is billed through the linked Enterprise Cloud account, and usage can be synced so a user isn't counted twice.",
+        "**Volume** (subscription): Enterprise plans only, a fixed number of licenses for a term.",
+        "At the license limit, enabled repos keep working, nothing new can be enabled, and new repos in auto-enable orgs are created with the product off. A hard budget (\"Limit usage when budget limit is reached\") behaves the same way.",
+        "AI Scan and agentic autofix also consume **Code Security AI Credits**. The docs publish no prices; the plans page lists $19 (Secret Protection) and $30 (Code Security) per active committer per month."
+      ] },
+      { "title": "The three areas the training uses", "points": [
+        "The training groups features into **Code Security** (code scanning, Autofix, dependency review, campaigns), **Secret Protection** (secret scanning, push protection, custom patterns) and **Supply Chain Security** (Dependabot, dependency graph).",
+        "Supply chain security is a feature area, not a product you buy: its core is free, and Code Security adds dependency review and custom auto-triage rules.",
+        "Each of the three has its own alert family, with its own close reasons and permissions, which later lessons cover."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 7's table marks push protection as **not** available on public repos without Secret Protection. The docs say public repos get push protection, and push protection for users is on by default. Read the question's framing.",
+        "Module 7 lists security overview, campaigns and auto-triage rules under Code Security only. The docs put overview and campaigns in both products.",
+        "Older material calls everything \"GitHub Advanced Security\", one add-on license, and says each committer uses a seat. On the exam, GHAS means the pair of products.",
+        "Module 7 describes Copilot Autofix on public repos as \"limited\" and secret scanning there as \"basic\"."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security", "https://docs.github.com/en/code-security/getting-started/github-security-features", "https://docs.github.com/en/billing/concepts/product-billing/github-advanced-security", "https://docs.github.com/en/code-security/concepts/secret-security/secret-security-with-github", "https://learn.microsoft.com/en-us/training/modules/github-administration-github-advanced-security/2-what-is-github-advanced-security"] },
+
+  { "id": "l-overview", "domain": "d1", "objectives": ["d1-0-3"],
+    "title": "Security overview", "minutes": 9,
+    "goal": "Know what security overview shows, at which level, and who can see it.",
+    "points": [
+      "Security overview rolls up alerts across an **organization** or **enterprise**, from the **Security and quality** tab.",
+      "Org views: Overview (Detection, Remediation and Prevention tabs), Risk, Coverage, Assessments, Campaigns, Enablement, Code scanning on pull requests, Dependabot, Secret scanning. Enterprise views: Overview, Risk, Coverage.",
+      "Every view shows **default-branch** data only, and the summary views count only Critical, High, Medium and Low alerts from GitHub's own tools.",
+      "Owners and security managers see everything. Repo admins see their repos. Repo writers see only code scanning and Dependabot data, and no Coverage view.",
+      "Needs Secret Protection or Code Security (or a GitHub Enterprise account). Team orgs without either still get the free secret risk assessment."
+    ],
+    "trap": "People with Read or Triage access get no security overview data at all.",
+    "tryIt": "In an org you belong to, open **Security and quality** and select Coverage. If you can't see it, note which role you'd need.",
+    "details": [
+      { "title": "The organization views", "table": { "head": ["View", "What it answers"], "rows": [
+        ["Overview", "Trends over time. **Detection** (default tab): where risk is found. **Remediation**: how alerts get fixed. **Prevention**: CodeQL pull request alerts and AI Scan findings stopped before the default branch"],
+        ["Risk", "Open alerts by severity and type across repositories"],
+        ["Coverage", "Which repositories have which features on, with enable buttons for the gaps"],
+        ["Enablement", "Feature adoption over time; useful during a rollout"],
+        ["Assessments", "The free secret risk assessment (owners and security managers only)"],
+        ["Campaigns", "Active and past security campaigns and their progress"],
+        ["Code scanning on pull requests", "Impact of CodeQL and AI Scan on PRs; exportable (CodeQL tab)"],
+        ["Dependabot", "Alert funnel; the default filter is `has:patch`, `severity:critical,high`, `epss-percentage:>=0.01`"],
+        ["Secret scanning", "Push protection metrics (public preview) and the bypass request review queue"]
+      ] } },
+      { "title": "Metrics the dashboard computes", "points": [
+        "**Mean time to remediate:** average of close date minus creation date, false positives excluded; a reopened alert keeps its original creation date.",
+        "**Net resolve rate:** alerts closed and still closed, divided by new alerts in the period.",
+        "Also: age of alerts, reopened alerts, secrets bypassed or blocked, impact analysis (top 10 repositories, advisories and SAST rules), and the alert activity graph.",
+        "Summary views show only default alerts: third-party code scanning results and generic or ignored-directory secret alerts are left out. Error, Warning and Note severities aren't counted.",
+        "Archiving a repository closes its open alerts, which changes the numbers."
+      ] },
+      { "title": "Filters and export", "points": [
+        "Filter syntax: a space means AND, a comma means OR, a leading minus means NOT. An Advanced filters dialog (Qualifier, Operator, Value) exists on Overview and Insights.",
+        "Qualifiers include `tool:codeql|dependabot|secret-scanning`, `severity:`, `secret-scanning.validity:`, `secret-scanning.bypassed:true`, `dependabot.scope:`, `code-scanning-alerts:>100`, `is:public`, `archived:true`, `team:`, `topic:`, `props.NAME:`, and `org:` at enterprise level.",
+        "**Export CSV** sits beside the search bar on the org Overview, Coverage, Risk and Code scanning on PRs views, and on the enterprise Overview, Risk and Coverage. An Overview export also emails a download link. The Teams column lists up to 20 teams."
+      ] },
+      { "title": "Who sees what", "table": { "head": ["Role", "Sees"], "rows": [
+        ["Organization owner, security manager", "Every view and every repository, including Assessments"],
+        ["Repository admin", "All data for the repositories they administer"],
+        ["Repository write", "Code scanning and Dependabot data only; no Coverage view"],
+        ["Custom org role with an alert-view permission", "That alert type in Overview and Risk, never Coverage"],
+        ["Read or triage", "Nothing"],
+        ["Any non-owner member", "At most the 3,000 most recently updated repositories"],
+        ["Enterprise owner", "Only organizations where they are an owner or security manager; no org repo data otherwise"]
+      ] } },
+      { "title": "Levels in the training", "points": [
+        "Three levels: **organization** (aggregate plus per-repo, filterable by feature), **team** (repos where the team has admin), **repository** (which features are on, with enable options).",
+        "Filters named in module 7: severity, repository, feature type, time range, team ownership, alert state. Use cases: feature adoption org-wide, per-team adoption during rollout, one alert type across repos.",
+        "Governance signals surfaced: push protection bypass events, branch protection activity, dismissal trends, audit log activity, policy coverage.",
+        "Module 7 lists Security Overview as Code Security only; the docs say either product unlocks it."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/code-security/concepts/security-at-scale/security-overview", "https://docs.github.com/en/code-security/reference/security-at-scale/overview-dashboard-metrics", "https://docs.github.com/en/code-security/reference/security-at-scale/overview-dashboard-filters", "https://docs.github.com/en/code-security/how-tos/view-and-interpret-data/analyze-organization-data/export-data", "https://docs.github.com/en/code-security/reference/permissions/security-overview", "https://learn.microsoft.com/en-us/training/modules/github-administration-github-advanced-security/5-manage-github-advanced-security-features-alerts"] },
+
+  { "id": "l-sdlc", "domain": "d1", "objectives": ["d1-1-0", "d1-1-1", "d1-1-2", "d5-4-0"],
+    "title": "Prevent, detect, fix: the secure SDLC", "minutes": 8,
+    "goal": "Place each security feature at the point in the lifecycle where it acts.",
+    "points": [
+      "**Before the commit lands:** push protection blocks secrets at `git push`, in the web editor, in file uploads and in the REST API. This is prevention-first.",
+      "**Before merge:** dependency review and code scanning on pull requests flag new risk. A ruleset turns them into gates that block merge.",
+      "**After merge:** scheduled scans, secret scanning of history, and Dependabot alerts (default branch only) find what's already there.",
+      "**Fixing at scale:** Dependabot security updates, Copilot Autofix and security campaigns turn alerts into pull requests.",
+      "Secret Protection stops credentials. Code Security finds flaws in your code and risky dependency changes. Most programs run both."
+    ],
+    "trap": "Prevention-first stops the problem before it reaches the repo. A required check that blocks merge is a gate. A weekly scan is detection.",
+    "tryIt": "Write one line per phase above naming the feature your team uses there, or \"none\".",
+    "details": [
+      { "title": "Where each feature acts", "table": { "head": ["Moment", "Feature", "Kind"], "rows": [
+        ["`git push`, web commits, uploads, REST create blob or file contents (409), MCP pushes", "Push protection (and push protection for users)", "Prevention"],
+        ["Pull request opened", "Code scanning on the PR with a check-failure threshold; dependency review as a rich diff on Files changed; Copilot Autofix suggestions", "Gate, plus fix"],
+        ["Merge", "Rulesets: require code scanning results, required status checks, required workflows (an org can require the dependency review action), required reviews", "Gate"],
+        ["Default branch", "Scheduled CodeQL scans, secret scanning of full history, Dependabot alerts from the graph (archived repos aren't scanned)", "Detection"],
+        ["Backlog", "Dependabot security updates, Copilot Autofix, security campaigns", "Fix at scale"],
+        ["Governance", "Security configurations, security overview, audit log", "Visibility and enforcement"]
+      ] } },
+      { "title": "Gate-based vs prevention-first", "points": [
+        "The training's framing: traditional security is a **gate** during QA, after the code is written, which creates a bottleneck and late, expensive fixes.",
+        "GitHub's approach **shifts left**: policies are set at project creation and feedback arrives on every commit, PR and merge.",
+        "Prevention-first means the problem never enters the repository (push protection). A gate lets it in but stops it merging (required checks). Detection finds it later (scheduled scans).",
+        "The training lists four benefits of integrated security: early detection, efficient remediation, consistent standards, improved collaboration through shared responsibility."
+      ] },
+      { "title": "How the two products work together", "points": [
+        "Secret Protection covers credentials: what's being pushed now and what's already in history, issues, PRs, Discussions and wikis.",
+        "Code Security covers the code itself (CodeQL and third-party scanners) and changes to dependencies in pull requests (dependency review, including indirect dependencies from lock files).",
+        "Both feed the same places: the repository's Security and quality tab, security overview, campaigns and the audit log.",
+        "The free supply chain layer (dependency graph, Dependabot) underpins both. Graph data precedence per manifest: user submissions, then Dependabot graph jobs, then automatic submission, then static analysis."
+      ] },
+      { "title": "Building the culture (module 1)", "points": [
+        "Make security part of the pull request, not a separate review: alerts on the PR, Autofix suggestions, required checks.",
+        "Share responsibility: developers fix, security triages and sets policy, admins enable and enforce. Security champions on each team help adoption.",
+        "Ignoring alerts has costs the module names: exploitation, breaches, higher remediation cost, reputational damage, regulatory noncompliance."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/code-security/concepts/secret-security/push-protection", "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review", "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-alerts", "https://learn.microsoft.com/en-us/training/modules/introduction-github-advanced-security/3-create-culture-around-security", "https://learn.microsoft.com/en-us/training/modules/github-administration-github-advanced-security/2-what-is-github-advanced-security"] },
+
+  { "id": "l-alerts-roles", "domain": "d1", "objectives": ["d1-2-0", "d1-2-1", "d1-2-3", "d1-3-0", "d1-3-1"],
+    "title": "Alert types and who handles them", "minutes": 10,
+    "goal": "Know which alerts exist, how each is detected, and who can see and act on them.",
+    "points": [
+      "**Three alert families:** code scanning (static analysis, mostly CodeQL), secret scanning (pattern and AI detection) and Dependabot (dependencies matched against the Advisory Database).",
+      "**Write, Maintain and Admin** can view and dismiss Dependabot and code scanning alerts. Read and Triage only see code scanning alerts on pull requests.",
+      "Writers and maintainers see secret alerts only for their own commits, not the alert list. Admins, org owners and security managers see the full list and the token metadata.",
+      "Owners and repo admins can grant alert access to more people or teams, but only to ones that already have write access.",
+      "Roles split the work: developers fix, security triages and sets policy, admins enable features and manage access."
+    ],
+    "trap": "Can a writer open the secret scanning alert list? No, even though they can view and dismiss alerts on their own commits.",
+    "tryIt": "On a repo you admin, open **Settings > Advanced Security > Access to alerts** and see who is listed.",
+    "details": [
+      { "title": "Repository roles and alerts (the exact table rows)", "table": { "head": ["Row in the docs table", "Minimum role"], "rows": [
+        ["View code scanning alerts on pull requests", "Read"],
+        ["Receive Dependabot alerts; Dismiss Dependabot alerts", "Write"],
+        ["List, dismiss, and delete code scanning alerts", "Write"],
+        ["View and dismiss secret scanning alerts (own commits only; no alert list view)", "Write"],
+        ["Create security advisories", "Admin"],
+        ["Manage access to GitHub Advanced Security features", "Admin"],
+        ["View secret alert details and token metadata; full alert list", "Admin (enterprise owners can request temporary access)"]
+      ] } },
+      { "title": "Custom roles and access grants", "points": [
+        "Custom repository roles need Enterprise Cloud, at most 20 per org. They add fine-grained permissions to a base role.",
+        "The security permissions a custom repo role can hold: View code scanning alerts; Dismiss or reopen code scanning alerts; Delete code scanning alerts; View Dependabot alerts; Dismiss or reopen Dependabot alerts; View secret scanning alerts; Dismiss, reopen, or assign secret scanning alerts.",
+        "Grant path: **Settings > Advanced Security > Access to alerts**, search for a person or team, Save changes. Remove with the x.",
+        "Security managers get write access on every security alert in the org and read on every repository.",
+        "Users with write can **assign** Dependabot alerts to collaborators, teams or a Copilot agent (which opens a draft PR). Assignments don't show in security overview."
+      ] },
+      { "title": "How each alert is detected", "points": [
+        "**Code scanning:** CodeQL builds a database of the code and runs queries, including data-flow queries from source to sink. Third-party tools contribute results as SARIF.",
+        "**Secret scanning:** provider patterns (hundreds of token formats), generic patterns (private keys, connection strings), AI-detected passwords, and your custom patterns. Paired credentials (an AWS key and its secret) alert only when both parts sit in the same file.",
+        "**Dependabot:** the dependency graph is matched against GitHub-reviewed advisories; malware advisories raise separate malware alerts. Alerts fire when an advisory is published or the graph changes. GitHub Actions dependencies are checked only when pinned by semantic version, not by SHA.",
+        "A secret in a public repo is also reported to the token's partner, who may revoke it before you see the alert."
+      ] },
+      { "title": "What each role does with an alert", "table": { "head": ["Role", "Responsibilities"], "rows": [
+        ["Developer", "Fix alerts in a PR, review and validate Autofix suggestions, remove or rotate leaked secrets, merge Dependabot PRs"],
+        ["Security engineer", "Triage severity, configure policies and rulesets, approve exceptions (bypass and dismissal requests), run campaigns"],
+        ["Administrator", "Enable features, apply security configurations, manage branch protection and access, review the audit log; doesn't fix code"]
+      ] } },
+      { "title": "Actions available per alert type", "points": [
+        "Code scanning: fix in a commit, dismiss with a reason, or delete the alert.",
+        "Secret scanning: revoke the secret and create a new one, update the code, then close the alert with a reason.",
+        "Dependabot: merge the update PR, create a security update on demand, or dismiss with a reason.",
+        "Example flow from the training: a developer gets an alert on their PR, security reviews severity, Autofix proposes a fix, the developer validates it, admins enforce branch protection, security reviews the audit log."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 7's table says secret scanning and Dependabot alerts are for \"repository administrators and organization owners\". Module 2 and the docs say write, maintain and admin see Dependabot alerts. The secret alert *list* really is admin-only.",
+        "Module 3 says secret scanning notifies all repository administrators about the offending commit, and the partner is told too."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/repository-roles-for-an-organization", "https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/about-custom-repository-roles", "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-security-and-analysis-settings-for-your-repository", "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-alerts", "https://learn.microsoft.com/en-us/training/modules/github-administration-github-advanced-security/4-manage-access-github-advanced-security"] },
+
+  { "id": "l-dismissing", "domain": "d1", "objectives": ["d1-2-2", "d2-2-2", "d4-2-2", "d5-1-2"],
+    "title": "Dismissing alerts without hiding risk", "minutes": 10,
+    "goal": "Pick the right close reason for each alert type, and know when a dismissal needs approval.",
+    "points": [
+      "**Secret scanning:** Revoked, False positive, Used in tests, Won't fix.",
+      "**Code scanning:** False positive, Won't fix, Used in tests, Mitigated (new in August 2026: an external control such as a WAF reduces the risk).",
+      "**Dependabot:** Fix has already started, No bandwidth to fix this, Risk is tolerable to this project, This alert is inaccurate or incorrect, Vulnerable code is not actually used.",
+      "Add a comment. It's optional for code scanning (280 characters max), but it's the record an auditor reads later.",
+      "**Delegated alert dismissal** (setting: Prevent direct alert dismissals) makes writers request a dismissal. Owners and security managers review. Secret scanning requests expire after 1 week."
+    ],
+    "trap": "Dismissing an exposed secret as Won't fix leaves a live credential. Rotate it, then close as Revoked.",
+    "tryIt": "Without looking, answer: which alert type is the only one with a Revoked reason?",
+    "details": [
+      { "title": "States and API values", "table": { "head": ["Alert", "States", "Reason values in the API"], "rows": [
+        ["Code scanning", "open, dismissed, fixed (the list filter also accepts closed)", "`false positive`, `won't fix`, `used in tests`, `mitigated`; `dismissed_comment` up to 280 characters"],
+        ["Secret scanning", "open, resolved", "`false_positive`, `wont_fix`, `revoked`, `used_in_tests`; filter-only `pattern_edited`, `pattern_deleted`; UI also shows hidden-by-config; `resolution_comment` can't be changed later"],
+        ["Dependabot", "open, dismissed, fixed, auto_dismissed", "`fix_started`, `inaccurate`, `no_bandwidth`, `not_used`, `tolerable_risk`; comment up to 280; a fixed alert can't be reopened"]
+      ] } },
+      { "title": "What a dismissal does, per alert type", "points": [
+        "**Code scanning:** the dismissal applies on every branch, the alert moves to Closed (reopenable), the reason and comment go on the alert timeline, and the same code doesn't alert again on later scans. Alerts can also be deleted outright.",
+        "**Dependabot:** the reason is recorded; auto-triage rules can dismiss automatically (state `auto_dismissed`) and reopen the alert if its metadata changes, for example a dependency moving from development to production scope.",
+        "**Secret scanning:** resolving with a reason ends the lifecycle; alerts don't close by themselves when the token is removed from code. Confirm the credential is revoked before closing.",
+        "Webhook actions tell you what happened: code scanning `closed_by_user`, `reopened_by_user`, `fixed`; secret scanning `resolved`, `reopened`; Dependabot `dismissed`, `auto_dismissed`, `auto_reopened`."
+      ] },
+      { "title": "Delegated alert dismissal", "table": { "head": ["Question", "Answer"], "rows": [
+        ["How to turn it on", "Repository setting **Prevent direct alert dismissals** under Secret Protection, Code Security and Dependabot; in a security configuration under Secret scanning, Code scanning and Dependency scanning. An enforced configuration locks it"],
+        ["Who must request", "Users with write access; approval dismisses the alert, denial leaves it open"],
+        ["Who reviews", "Org owners, security managers, and custom roles with the review permission for that alert type"],
+        ["Permission names", "\"Review and manage secret scanning alert dismissal requests\"; \"Review / Bypass / View code scanning alert dismissal requests\"; the same three for Dependabot"],
+        ["Where to review", "Org or enterprise **Security and quality > Requests**, then Secret scanning, Code scanning or Dependabot alert dismissal; Review request; Approve or Deny; Submit review"],
+        ["Who is emailed", "Reviewers when a request is made; the requester with the outcome"],
+        ["Expiry", "1 week, documented for secret scanning; code scanning and Dependabot requests expose an `expires_at` field"],
+        ["Availability", "Code scanning and secret scanning on GitHub.com and GHES 3.17+; Dependabot on GHES 3.21+"],
+        ["Audit events", "`code_scanning.alert_closure_requested` / `approved` / `denied`; `secret_scanning_closure_request.approve` / `deny`; `dependabot_closure_request.create` / `approve` / `deny` / `cancel`"]
+      ] } },
+      { "title": "Documenting a dismissal", "points": [
+        "Record why, who reviewed it, whether the exception is temporary or permanent, and any compensating control.",
+        "For secrets, confirm the credential was revoked or rotated, note whether it was valid when exposed, and finish incident response before closing.",
+        "**Mitigated** is the reason for code that stays vulnerable while something else (a WAF, a network policy) reduces the risk. Before August 2026 teams used Won't fix for this.",
+        "Frameworks that audit exceptions: SOC 2, ISO 27001, PCI DSS. The audit log and alert timelines are the evidence.",
+        "Revisit dismissed Dependabot alerts as the project changes: a dev-only package can become a production one."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 3 calls the setting **Alert dismissal rules** and says it \"requires justification before users can dismiss\". The docs call it Prevent direct alert dismissals; both describe delegated dismissal.",
+        "Older material lists three code scanning reasons. The REST enum now has four: `false positive`, `won't fix`, `used in tests`, `mitigated`."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/code-security/concepts/security-at-scale/delegated-alert-dismissal", "https://docs.github.com/en/code-security/how-tos/manage-security-alerts/remediate-alerts-at-scale/review-alert-dismissal-requests", "https://docs.github.com/en/rest/dependabot/alerts", "https://docs.github.com/en/rest/code-scanning/code-scanning", "https://docs.github.com/en/rest/secret-scanning/secret-scanning", "https://github.blog/changelog/2026-08-20-code-scanning-adds-a-mitigated-alert-dismissal-reason/", "https://learn.microsoft.com/en-us/training/modules/configure-use-secret-scanning-github-repository/4-use-secret-scanning"] }
+]

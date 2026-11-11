@@ -1,0 +1,359 @@
+[
+  { "id": "l-scanning-options", "domain": "d4", "objectives": ["d4-0-0", "d4-0-1", "d4-0-2"],
+    "title": "CodeQL, third-party tools and SARIF", "minutes": 10,
+    "goal": "Choose a scanner and get its results into code scanning.",
+    "points": [
+      "**CodeQL** covers C/C++, C#, Go, Java/Kotlin, JavaScript/TypeScript, Python, Ruby, Rust, Swift and GitHub Actions workflows. Not PHP or Scala. Free on public repos; Code Security on private.",
+      "**Third-party tools** upload SARIF 2.1.0. Use them for languages CodeQL lacks, or tools you already run.",
+      "Upload with `github/codeql-action/upload-sarif` or the REST API. Max 10 MB gzipped, 20 runs per file, 25,000 results per run of which the top 5,000 are kept.",
+      "**Category:** a second upload with the same tool and category for a commit replaces the first. Give each analysis its own `category`; the same tool and category twice in one workflow run fails the run.",
+      "Other CI: the CodeQL CLI runs `database create`, `database analyze`, then `github upload-results`. The token needs `security_events` (classic) or Code scanning alerts: write (fine-grained)."
+    ],
+    "trap": "Two tools, one commit, and results vanish: the fix is a distinct category.",
+    "tryIt": "Open the related lab and find the `category` line in the upload step.",
+    "details": [
+      { "title": "CodeQL languages", "table": { "head": ["Workflow id", "Covers", "Build mode none?"], "rows": [
+        ["`c-cpp`", "C, C++", "Yes"],
+        ["`csharp`", "C#", "Yes"],
+        ["`java-kotlin`", "Java, Kotlin", "Java yes; Kotlin needs a build (autobuild)"],
+        ["`javascript-typescript`", "JavaScript, TypeScript (the old `javascript` id still covers both)", "Interpreted, no build"],
+        ["`python`, `ruby`", "Python, Ruby", "Interpreted, no build"],
+        ["`go`", "Go", "No; autobuild or manual"],
+        ["`swift`", "Swift", "No; autobuild or manual; not on larger runners"],
+        ["`rust`", "Rust", "Yes"],
+        ["`actions`", "GitHub Actions workflow files", "No build"]
+      ] }, "points": ["PHP and Scala aren't supported. Analyzing an unsupported language \"may result in no alerts being generated and incomplete analysis\"."] },
+      { "title": "SARIF limits", "table": { "head": ["Limit", "Value"], "rows": [
+        ["File size", "10 MB after gzip"],
+        ["Runs per file", "20"],
+        ["Results per run", "25,000 accepted; the top 5,000 by severity kept"],
+        ["Rules per run; tool extensions", "25,000; 100"],
+        ["Thread-flow locations per result", "10,000 accepted; 1,000 shown"],
+        ["Locations per result", "1,000 accepted; 100 shown"],
+        ["Tags per rule", "20 accepted; 10 shown"],
+        ["REST uploads", "1,000 per hour"],
+        ["Alerts per repository", "1,000,000"]
+      ] } },
+      { "title": "What a valid SARIF file needs", "points": [
+        "`version` 2.1.0 and a `runs` array. Each run needs `tool.driver` and `results`. Each rule needs `id`, `shortDescription.text`, `fullDescription.text` and `help.text`. Each result needs `message.text`, `locations` and `partialFingerprints`.",
+        "Severity comes from `defaultConfiguration.level` (note, warning, error; default warning) and `problem.severity` (error, warning, recommendation). `precision` is very-high, high, medium or low.",
+        "`security-severity` bands: over 9.0 critical, 7.0 to 8.9 high, 4.0 to 6.9 medium, 0.1 to 3.9 low. A value of 0.0 or out of range means no security severity.",
+        "Only the `primaryLocationLineHash` fingerprint is used to match alerts across runs. If a rule id or file path changes, the old alert closes and a new one opens. Raw API uploads without fingerprints can duplicate alerts.",
+        "The category is read from `runAutomationDetails.id` as `category/run-id`: the text before the last slash is the category. The CodeQL action derives it from the workflow file name plus matrix values."
+      ] },
+      { "title": "Uploading", "points": [
+        "`upload-sarif` inputs: `sarif_file` (a file or a directory; each file then needs its own `runAutomationDetails.id`), `checkout_path`, `token`, `matrix`, `category`, `wait-for-processing`.",
+        "REST: `POST /repos/{owner}/{repo}/code-scanning/sarifs` with `commit_sha`, `ref` (`refs/heads/`, `refs/tags/`, `refs/pull/N/merge` or `/head`) and `sarif` (gzip then base64); optional `checkout_uri`, `started_at`, `tool_name` (default API) and `validate`.",
+        "The upload call answers 202 with an id you can poll at `GET /repos/{owner}/{repo}/code-scanning/sarifs/{sarif_id}` until processing finishes.",
+        "Classic token scopes: `security_events` (or `public_repo` on public repos) for alerts, analyses and SARIF upload; the `repo` scope for deleting analyses, downloading CodeQL databases, variant analysis, autofix commits and default setup.",
+        "On a private repo without the product the upload fails with \"GitHub Code Security or GitHub Advanced Security must be enabled for this repository to use code scanning\".",
+        "If default setup is on, CodeQL SARIF uploads are rejected; third-party SARIF is still accepted."
+      ] },
+      { "title": "REST and the tool status page", "points": [
+        "Alerts: `GET /orgs/{org}/code-scanning/alerts` and `GET /repos/{owner}/{repo}/code-scanning/alerts` (the repo call adds `ref` and `pr`). `state` is open, closed, dismissed or fixed; `per_page` up to 100.",
+        "`GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}` with `Accept: application/sarif+json` returns the uploaded SARIF plus `github/alertNumber` and `github/alertUrl` properties. Deleting an analysis needs `confirm_delete`.",
+        "`GET /repos/{owner}/{repo}/code-scanning/codeql/databases/{language}` with `Accept: application/zip` downloads the CodeQL database.",
+        "The **Tool status** page (repo level, default branch) reports All configurations are working, Some configurations need attention, or Some configurations are not working. If default and advanced setup both exist, it shows only default setup."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 4 says SARIF upload supports \"a maximum of 5,000 results per upload\". The docs accept 25,000 and keep 5,000. Either number can appear.",
+        "Module 4 calls the workflow `codeql-analysis.yml`; module 6 and the current generator use `codeql.yml`.",
+        "Module 4: always use the **CodeQL bundle** (CLI plus matching queries and precompiled suites), not a bare CLI download. The ESLint example is `-f @microsoft/eslint-formatter-sarif -o results.sarif || true`, then `upload-sarif`.",
+        "Module 5: category maps to `automationDetails.id` with a trailing slash in older SARIF variants; use the language as the category."
+      ] }
+    ],
+    "lab": "lab-sarif",
+    "sources": ["https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-code-scanning", "https://docs.github.com/en/code-security/reference/code-scanning/sarif-files/sarif-support", "https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/integrate-with-existing-tools/upload-sarif-file", "https://docs.github.com/en/rest/code-scanning/code-scanning", "https://docs.github.com/en/code-security/concepts/code-scanning/tool-status-page", "https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options"] },
+
+  { "id": "l-default-advanced", "domain": "d4", "objectives": ["d4-1-0", "d4-1-1", "d4-1-2"],
+    "title": "Default setup vs advanced setup", "minutes": 10,
+    "goal": "Pick default or advanced setup, and configure triggers and a language matrix.",
+    "points": [
+      "**Default setup:** one click. Scans on enable, on pushes and PRs to the default or protected branches (not from forks), and weekly while there's been a push or PR in the last 180 days. Queries: default or Extended (`security-extended`).",
+      "**Advanced setup:** you own `codeql.yml`. Needed for custom build steps, a matrix, `security-and-quality`, custom suites, or schedule-only triggers.",
+      "Default setup can still take a config file through the `github-codeql-config-file` repository property (an org can set a default value), and lets you pick the threat model and runner type.",
+      "**Matrix:** one job per language with `languages: ${{ matrix.language }}` and `category: \"/language:${{ matrix.language }}\"`, with `fail-fast: false`.",
+      "The job needs `security-events: write`; private repos also need `contents: read` and `actions: read`. Orgs can share approved workflow templates."
+    ],
+    "trap": "Run only on a schedule is advanced setup only.",
+    "tryIt": "In the snippet, point to the line that keeps each language's results separate.",
+    "snippet": { "label": ".github/workflows/codeql.yml (excerpt)", "code": "strategy:\n  fail-fast: false\n  matrix:\n    include:\n      - language: javascript-typescript\n        build-mode: none\n      - language: java-kotlin\n        build-mode: autobuild\nsteps:\n  - uses: actions/checkout@v5\n  - uses: github/codeql-action/init@v4\n    with:\n      languages: ${{ matrix.language }}\n      build-mode: ${{ matrix.build-mode }}\n  - uses: github/codeql-action/analyze@v4\n    with:\n      category: \"/language:${{ matrix.language }}\"" },
+    "details": [
+      { "title": "Default setup, rule by rule", "points": [
+        "Triggers: when enabled; on push to the default branch or any protected branch; on PRs to those branches, excluding PRs from forks; weekly, only if a push or PR triggered a scan in the last 180 days (the initial scan doesn't start the weekly clock).",
+        "Org global setting **Keep scheduled scans running every 30 days for inactive repositories**; the 30 days aren't configurable.",
+        "No supported language on the default branch means no scans and no Actions minutes. Scanning starts when a supported language lands. If a new language configuration fails, the previous one resumes.",
+        "Languages are detected automatically or chosen by hand. Edit under View CodeQL configuration > Edit: Languages, Query suite, Runner type (Standard GitHub runner or Labeled runner), Threat model (Remote and local sources).",
+        "Switching from advanced to default warns that it \"will override existing code scanning configurations\": the workflow is disabled and CodeQL API uploads are blocked. Reverse it with the row menu > Switch to advanced > Disable CodeQL.",
+        "Runner label `code-scanning`. Name a larger runner `code-scanning` to use it (one per org); if a repo can reach one, default setup uses only those runners. Swift isn't supported on larger runners.",
+        "`github-codeql-config-file` can be set org-wide as a property default such as `remote=octo-org/config@main:codeql.yml`; repos with their own value keep it. Model packs in `.github/codeql/extensions` are picked up automatically."
+      ] },
+      { "title": "The advanced workflow", "points": [
+        "Structure: `actions/checkout`, `codeql-action/init` (`languages`, `build-mode`, `queries`, `config-file` or `config`), an autobuild step or your own build commands, then `codeql-action/analyze` with a `category`.",
+        "`on: push` requires the workflow file to exist on that branch; push results appear in the Security tab and are mapped onto open PRs. `on: pull_request` scans the merge commit, which the docs call more efficient and accurate.",
+        "PRs from private forks run only if **Run workflows from fork pull requests** is enabled. Add `merge_group` if you use a merge queue.",
+        "`on.pull_request.paths` and `paths-ignore` only decide whether the workflow runs; if any changed file is unmatched, every file is scanned. They're different from `paths` in the CodeQL config file.",
+        "Schedule: weekly by default. `cron: '20 14 * * 1'` means Monday 14:20 UTC. The scheduled event fires only if the workflow file is on the default branch.",
+        "`config-file` accepts `remote=OWNER/REPO@REF:FILEPATH`; the `config` input takes a YAML string such as `${{ vars.CODEQL_CONF }}`."
+      ] },
+      { "title": "Build modes", "table": { "head": ["Mode", "Languages", "Notes"], "rows": [
+        ["`none`", "C/C++, C#, Java, Rust (default setup); JavaScript/TypeScript, Python, Ruby are always buildless", "Generated code isn't analyzed and build scripts can't be queried. Kotlin is skipped in a Java none-build database"],
+        ["`autobuild`", "C/C++, C#, Go, Java/Kotlin, Swift", "Without a matrix, builds the compiled language with the most files; behavior varies by OS"],
+        ["`manual`", "Any compiled language", "The docs rate it best for accuracy. Advanced setup only: your build commands go between init and analyze, per language with `if: matrix.language == 'java'`"]
+      ] } },
+      { "title": "Default setup by API", "points": [
+        "`PATCH /repos/{owner}/{repo}/code-scanning/default-setup` with `state` (configured, not-configured), `runner_type` (standard, labeled), `runner_label`, `query_suite` (default, extended), `threat_model` (remote, remote_and_local), `languages`. Answers 202.",
+        "Security configurations can enable default setup for many repos at once, with **Enabled with advanced setup allowed** (GHES 3.19+) skipping repos that already run CodeQL."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 4: write permission is needed to set up code scanning; if the Set up code scanning button is missing, an owner or admin must enable GHAS first.",
+        "Module 4 and 6 name bulk-enablement scripts (jhutchings1/Create-ActionsPRs, nickliffen/ghas-enablement); today a security configuration does this.",
+        "Module 4 Actions billing: free on public repos and self-hosted runners; monthly-billed accounts default to a $0 spending limit; minutes reset monthly, storage doesn't.",
+        "Module 6: the matrix hardcodes languages, so add new ones by hand; without a matrix, analysis runs sequentially and auto-detects, or you set `languages:` on init."
+      ] }
+    ],
+    "lab": "lab-codeql-matrix",
+    "sources": ["https://docs.github.com/en/code-security/concepts/code-scanning/setup-types", "https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/manage-your-configuration/edit-default-setup", "https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/manage-your-configuration/configure-larger-runners", "https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options", "https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/manage-your-configuration/codeql-for-compiled-languages", "https://docs.github.com/en/rest/code-scanning/code-scanning", "https://learn.microsoft.com/en-us/training/modules/configure-code-scanning/4-configure-code-scanning"] },
+
+  { "id": "l-code-alerts", "domain": "d4", "objectives": ["d4-2-0", "d4-2-1", "d4-2-2"],
+    "title": "Triage code scanning alerts", "minutes": 10,
+    "goal": "Read an alert's data flow, fix it, and close it correctly.",
+    "points": [
+      "An alert shows the rule (the query id), the location and, for data-flow queries, the path from **source** (untrusted input) to **sink** (dangerous use) under Show paths.",
+      "**Severity** (Error, Warning, Note) applies to all rules. **Security severity** (Critical, High, Medium, Low) applies to security rules and wins when present.",
+      "Fixing the code closes the alert as Fixed on the next default-branch scan. Dismiss reasons: False positive, Won't fix, Used in tests, and Mitigated (added August 2026).",
+      "**Copilot Autofix** suggests fixes on PRs and the default branch. Free on public repos; Code Security on private. No Copilot license needed, and it consumes no AI credits.",
+      "Autofix output isn't deterministic. Review it like any PR: it can be wrong or add made-up dependencies."
+    ],
+    "trap": "Copilot Autofix doesn't need a Copilot subscription. On private repos it needs Code Security.",
+    "tryIt": "Open any code scanning alert and click through its data-flow path.",
+    "details": [
+      { "title": "Anatomy of an alert", "points": [
+        "The Rule ID is the query id. Severity bands for security severity: over 9.0 critical, 7.0 to 8.9 high, 4.0 to 6.9 medium, 0.1 to 3.9 low. A new query's security severity is the 75th percentile CVSS score of CVEs sharing its CWE tags.",
+        "Status reflects the default branch only. **Affected branches** lists the others. An alert not on the default branch shows \"in pull request\" or \"in branch\" in grey. **Development** lists the branches and PRs fixing it.",
+        "Write access is needed for the repo alert list, Show paths and Show more details (tags, CWEs, the introducing commit). Read access sees only PR annotations.",
+        "Filters: `is:open`, `is:closed`, `severity:`, `branch:`, `ref:`, `pr:`, `tag:` (prefix `-` to exclude), `autofilter:true`. Ref filters OR together; other filters AND; free-text words OR."
+      ] },
+      { "title": "Fix, dismiss, reopen", "points": [
+        "Fixed means a scan of the default branch no longer finds it (audit event `code_scanning.alert_closed_became_fixed`). Dismissal applies to all branches, moves the alert to Closed, and the same code doesn't alert on the next scan.",
+        "The dismissal comment is optional and lands on the timeline (`dismissed_comment`, 280 characters). Bulk dismissal: filter the list, then dismiss all matching alerts from the summary. Reopen from the Closed list. Alerts can also be deleted.",
+        "**Mitigated** (2026-08-20): the flaw stays but outside controls such as a WAF or network policy reduce its risk. Distinct from Won't fix; built for exception and risk-acceptance workflows.",
+        "REST `PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}`: `state` open or dismissed; `dismissed_reason` required when dismissing (`false positive`, `won't fix`, `used in tests`, `mitigated`); also `dismissed_comment` and `assignees`.",
+        "With delegated dismissal on, writers submit a request; owners and security managers approve, deny or dismiss directly, and reviewers get an email per request."
+      ] },
+      { "title": "Alerts in pull requests", "points": [
+        "Two kinds of checks: **CodeQL / Analyze (LANGUAGE)** per language, which can fail on build errors, then **Code scanning results**.",
+        "Default failure threshold: an alert with severity Error, or security severity Critical or High, fails the check; lower results are warnings or notes. Change it in repo settings per severity and security severity, or with a ruleset.",
+        "A PR alert appears only if every line it identifies is in the diff. Autofix comments are posted all at once; apply one with Edit or View autofix patch, reject with Dismiss suggestion.",
+        "The training (modules 4 and 5) puts the threshold under Settings > Advanced Security > Code scanning > Protection rules, and says rulesets are preferred."
+      ] },
+      { "title": "Copilot Autofix and agentic autofix", "table": { "head": ["", "Copilot Autofix", "Agentic autofix"], "rows": [
+        ["What it does", "Suggests a fix on the alert or as a PR comment", "**Assign to Copilot** on up to 25 alerts: one agent session, one draft PR that it validates by re-running CodeQL"],
+        ["Status", "GA; on by default wherever CodeQL runs unless an admin disables it", "GA since 2026-10-15; default-branch backlog alerts only; can't validate custom, security-extended or third-party alerts"],
+        ["Cost", "No AI credits, no Copilot license", "Code Security AI Credits plus Actions minutes; no Copilot license"],
+        ["Availability", "Public repos free; private need Code Security; EMU repos yes", "Not for EMU repos; REST assignee is `copilot-swe-agent[bot]`"],
+        ["Turn off", "Enterprise Policies > Advanced Security (All organizations: Not allowed); org Global settings > Code scanning > Copilot Autofix Off; repo Advanced Security > Code Security Off; cascades downward", "Same cascade"]
+      ] }, "points": ["Autofix suits localized patterns such as injection and unsafe APIs. Complex issues may still need a hand-written fix (module 5). Some alerts offer suggested fixes even without Autofix."] }
+    ],
+    "lab": "lab-codeql-skills",
+    "sources": ["https://docs.github.com/en/code-security/concepts/code-scanning/code-scanning-alerts", "https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/triage-alerts-in-pull-requests", "https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolve-alerts", "https://docs.github.com/en/code-security/concepts/code-scanning/autofix-for-code-scanning", "https://github.blog/changelog/2026-10-15-agentic-autofix-for-code-scanning-alerts-general-availability/", "https://github.blog/changelog/2026-08-20-code-scanning-adds-a-mitigated-alert-dismissal-reason/", "https://docs.github.com/en/rest/code-scanning/code-scanning"] },
+
+  { "id": "l-codeql-custom", "domain": "d4", "objectives": ["d4-3-0", "d5-2-0", "d5-2-1"],
+    "title": "Customize CodeQL", "minutes": 10,
+    "goal": "Change what CodeQL runs: suites, packs, paths and threat models.",
+    "points": [
+      "**Suites:** `default` (high precision), `security-extended` (more security queries, lower precision and severity), `security-and-quality` (adds maintainability and reliability queries).",
+      "**Config file keys:** `name`, `disable-default-queries`, `queries`, `packs`, `query-filters`, `paths`, `paths-ignore`, `threat-models`. Workflow `queries` or `packs` replace the file's unless prefixed with `+`.",
+      "`paths` and `paths-ignore` work for interpreted languages and for compiled code analyzed with build mode none. For built code, change the build instead.",
+      "**Threat models** (public preview, Java/Kotlin and C#): the default is remote sources. `threat-models: local` adds CLI arguments, environment variables, files and databases.",
+      "**Packs** share queries as `scope/name@version:path`. Combine packs, suites, filters and threat models to match your risk profile."
+    ],
+    "trap": "`paths-ignore` doesn't shrink analysis of a compiled language that's built in the job.",
+    "tryIt": "Read the snippet and say which line adds local sources.",
+    "snippet": { "label": ".github/codeql/codeql-config.yml", "code": "name: \"Custom CodeQL config\"\nqueries:\n  - uses: security-extended\n  - uses: octo-org/python-codeql-pack/show_ifs.ql@main\npacks:\n  - codeql/javascript-queries\nquery-filters:\n  - exclude:\n      id: js/unused-local-variable\npaths-ignore:\n  - docs/**\n  - test/**\nthreat-models: local" },
+    "details": [
+      { "title": "queries and packs syntax", "points": [
+        "A `queries` entry is `uses:` followed by a `.ql` file, a directory, a `.qls` suite, a built-in suite name, or `owner/repo/path@ref` such as `octo-org/python-codeql-pack/show_ifs.ql@main`. Optional `name:` labels it.",
+        "A pack is `scope/name[@version][:path]` with a semver range; no version means latest. Multi-language workflows must put packs in the config file, optionally as a map per language (`javascript:`, `java:`).",
+        "In the workflow, `queries: +security-and-quality,octo-org/python-qlpack/show_ifs.ql@main` adds to the config file instead of replacing it. Private packs need `GITHUB_TOKEN`.",
+        "`disable-default-queries: true` runs only your queries. Don't reference `github/codeql` suites directly by path: they may need recompiling or mismatch the CLI version.",
+        "External config repo (public, internal or private): `config-file: OWNER/REPO/FILE@BRANCH` or `remote=OWNER/REPO@REF:FILEPATH`; add `external-repository-token: ${{ secrets.ACCESS_TOKEN }}` on init for a private config or query repo."
+      ] },
+      { "title": "query-filters", "points": [
+        "`exclude` or `include` by `id` (the alert's Rule ID), by `tags` (for example `/cwe-020/`), or by `problem.severity`.",
+        "Filters run in order: the first sets the default and later ones override it. Order matters."
+      ] },
+      { "title": "paths and glob rules", "points": [
+        "`?`, `+`, `[`, `]` and `!` are literal. `**` is allowed only at the start, at the end, or between slashes: `foo/**`, `**/foo`, `foo/**/bar`, never `**foo`. Quote any pattern that contains `*`.",
+        "They apply to interpreted languages and to C/C++, C#, Java and Rust analyzed with build mode none. `on.push.paths` in the workflow only gates whether the workflow runs."
+      ] },
+      { "title": "Suites, deeper", "points": [
+        "Default setup offers only default and Extended. Anything else, including `security-and-quality` and custom suites, is advanced setup.",
+        "A `.qls` file is a list of instructions run in order: locate queries (`query`, `queries` with `from` and `version`, `qlpack`), then filter by `id`, `kind`, `name`, `tags`, `precision` or `problem.severity`. One include block with several keys is AND; separate blocks are OR; later filters override.",
+        "`import` reuses another suite; `apply` inlines its instructions. Preview a suite with `codeql resolve queries suite.qls`.",
+        "**Variant analysis:** take a known bug as the seed, write a query for its pattern, and run it across many repositories."
+      ] },
+      { "title": "Threat models and model packs", "points": [
+        "`threat-models: local` keeps the remote model on and adds local sources. In default setup, choose Remote and local sources in the Threat model row.",
+        "**Model packs** (public preview) extend analysis to frameworks CodeQL doesn't model, for C/C++, C#, Java/Kotlin, Python, Ruby and Rust. Add them under `packs`, or drop them in `.github/codeql/extensions`; an org can set them under Global settings > Code scanning > Expand CodeQL analysis.",
+        "Three pack types: query packs (precompiled queries), library packs (no queries), model packs."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 6's packs syntax on the init step is a comma list: `scope/pack1,scope/pack2@1.2.3,scope/pack3@~3.2.1,scope/pack4@4.5.6:path/to/queries`.",
+        "Module 6 warns not to reference `github/codeql/...@main` style paths because of version mismatch, and says `external-repository-token` is for private repos.",
+        "Module 6: `codeql pack init` creates `qlpack.yml` (name, version, dependencies, default suite); imports resolve relative to that directory."
+      ] }
+    ],
+    "lab": "lab-codeql-query",
+    "sources": ["https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options", "https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-query-suites", "https://docs.github.com/en/code-security/tutorials/customize-code-scanning/create-query-suites", "https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/manage-your-configuration/edit-default-setup", "https://learn.microsoft.com/en-us/training/modules/code-scanning-with-github-codeql/6-customize-your-scanning-workflow-with-codeql"] },
+
+  { "id": "l-ql-basics", "domain": "d4", "objectives": ["d4-3-0", "d5-2-0"],
+    "title": "QL and how a CodeQL query works", "minutes": 10,
+    "goal": "Read a CodeQL query, name its parts, and explain what turns a result into an alert.",
+    "points": [
+      "CodeQL **extracts** code into a relational database, then runs **QL queries** against it. Each result becomes a SARIF result, then an alert.",
+      "A query file has four parts: a **metadata comment**, `import` lines, optional classes and predicates, and the `from`, `where`, `select` clause.",
+      "The CLI requires `@kind`: `problem` makes an alert query; `path-problem` makes a data-flow query with a source-to-sink path. `@id` keeps alerts matched across runs; `@name` and `@description` are what the alert shows.",
+      "QL is declarative and object-oriented: SQL-like syntax with Datalog semantics. It has `and`, `or`, `not`, `exists`, `forall`, recursion and aggregates, and no loops or assignment.",
+      "Path queries use `DataFlow::Global<Config>` (or `TaintTracking::Global` to follow taint through string operations) and `select sink.getNode(), source, sink, \"message\"`."
+    ],
+    "trap": "A query with no `@kind` runs fine but produces a raw table, not alerts. A changed `@id` opens new alerts and closes the old ones.",
+    "tryIt": "In the snippet, point to the four parts: metadata, import, from/where, select.",
+    "snippet": { "label": "A minimal alert query (JavaScript)", "code": "/**\n * @name Hard-coded credential\n * @description A string literal looks like a password.\n * @kind problem\n * @id js/example/hardcoded-credential\n * @problem.severity warning\n * @security-severity 7.5\n * @precision high\n * @tags security\n *       external/cwe/cwe-798\n */\nimport javascript\n\nfrom StringLiteral s\nwhere s.getValue().regexpMatch(\"(?i)password=.+\")\nselect s, \"Possible hard-coded credential.\"" },
+    "details": [
+      { "title": "Query metadata, line by line", "points": [
+        "`@kind`: `problem` (alerts), `path-problem` (paths; needs `Flow::PathGraph`), `diagnostic` (analysis diagnostics), `metric` with `@tags summary` (summaries). The CLI needs it; VS Code tolerates missing metadata but then shows a table.",
+        "`@id` is `<language>/<name>` in lowercase letters and digits separated by `/` or `-`, unique per query. `@previous-id` carries alert history when an id changes.",
+        "`@problem.severity` is `error`, `warning` or `recommendation`, for non-security queries; it works with `@precision` to decide how results display.",
+        "`@security-severity` is a CVSS-style score from 0.0 to 10.0 for queries tagged `security`. It drives Critical, High, Medium, Low on the alert.",
+        "`@precision` (`very-high`, `high`, `medium`, `low`) expresses the share of true positives. Suites pick queries by precision: the default suite runs high-precision queries; `security-extended` adds lower precision and severity.",
+        "Common `@tags`: `correctness`, `maintainability`, `readability`, `security`, and `external/cwe/cwe-NNN` to link a CWE."
+      ] },
+      { "title": "The QL language", "points": [
+        "A **predicate** is a relation; a **class** is a predicate over a type (a set of values). Inheritance is implication, so a subclass narrows the set.",
+        "Queries are evaluated bottom-up; large predicates are expensive, which is why a slow query is usually a badly bounded predicate.",
+        "`from` declares variables and types, `where` holds the logic, `select` lists the columns. Aggregates: `count`, `sum`, `avg`, `min`, `max`, `strictcount`.",
+        "`exists(Expr e | cond)` and `forall(Expr e | cond)` are the quantifiers. Recursive predicates are allowed and common.",
+        "Standard libraries ship per language (`import javascript`, `import java`, `import python`, `import cpp`). Classes such as `Expr`, `Stmt`, `Call` map onto database tables."
+      ] },
+      { "title": "How the database is built", "points": [
+        "Compiled languages are extracted by monitoring the build: each compiler invocation produces a copy of the code's structure. Interpreted languages run the extractor directly on the source.",
+        "A database holds one language at one point in time: relational data (AST, data-flow and control-flow graphs), a source archive and the schema. It's a snapshot, never incremental.",
+        "Extraction is one extractor per language, then queries, then SARIF, then upload."
+      ] },
+      { "title": "Path queries", "points": [
+        "Declare a configuration module with `isSource` and `isSink`, then `module Flow = DataFlow::Global<Config>;` and `import Flow::PathGraph`.",
+        "The clause is `from Flow::PathNode source, Flow::PathNode sink where Flow::flowPath(source, sink) select sink.getNode(), source, sink, \"message\"`.",
+        "Data flow tracks values; taint tracking also follows values through operations such as string concatenation. Use `TaintTracking::Global` for injection-style bugs.",
+        "In the alert, **Show paths** displays the steps the query found. That's the data-flow insight the exam objectives mention."
+      ] },
+      { "title": "Packs and suites", "points": [
+        "Three pack types: **query packs** (precompiled queries), **library packs** (no queries), **model packs** (public preview; extend analysis to frameworks CodeQL doesn't model).",
+        "`qlpack.yml` names the pack (`scope/name`), its version, dependencies and default suite. `codeql pack init` creates it; `codeql pack download` fetches published packs. Delete `.qlx` files before editing a published pack.",
+        "A query specifier is `scope/name@range:path`: no range means latest, no path means the pack's default suite; the path may be a `.ql` file, a directory or a `.qls`. Globs aren't supported.",
+        "A suite (`.qls`) is a YAML list of instructions run in order: locate queries, then filter by tags, precision or severity. GitHub's `default`, `security-extended` and `security-and-quality` suites are built this way.",
+        "**Variant analysis:** take a known bug as the seed, write a query for its pattern, and run it across many repositories to find the same flaw elsewhere."
+      ] },
+      { "title": "Running and testing a query", "points": [
+        "`codeql query run my.ql --database=<db>` runs one query and prints the table. `codeql database analyze <db> my.ql --format=sarif-latest --output=out.sarif` produces SARIF for upload.",
+        "The CodeQL extension for VS Code runs queries, shows results in place and drives the CLI for you.",
+        "To run a custom query in Actions, reference it with `queries:` on the `init` step or in the config file; it must live in a pack or a repository CodeQL can read."
+      ] }
+    ],
+    "lab": "lab-codeql-query",
+    "sources": ["https://codeql.github.com/docs/writing-codeql-queries/about-codeql-queries/", "https://codeql.github.com/docs/writing-codeql-queries/metadata-for-codeql-queries/", "https://codeql.github.com/docs/ql-language-reference/about-the-ql-language/", "https://codeql.github.com/docs/writing-codeql-queries/creating-path-queries/", "https://codeql.github.com/docs/codeql-overview/about-codeql/", "https://docs.github.com/en/code-security/tutorials/customize-code-scanning/customize-analysis", "https://learn.microsoft.com/en-us/training/modules/code-scanning-with-github-codeql/4-what-is-ql"] },
+
+  { "id": "l-codeql-cli", "domain": "d4", "objectives": ["d4-1-0", "d4-0-2", "d4-3-1"],
+    "title": "The CodeQL CLI outside GitHub Actions", "minutes": 10,
+    "goal": "Run the three CLI steps in any CI system and get the results into code scanning.",
+    "points": [
+      "Use the **CodeQL bundle** from the `github/codeql-action` releases: the CLI plus the standard packs (`codeql/<lang>-queries` and `codeql/<lang>-all`) in one cross-platform tarball. Don't pair a bare CLI with queries from elsewhere.",
+      "**Step 1, create:** `codeql database create <db> --language=<id>` extracts the code into a database. Compiled languages need a build (`--command \"make\"` implies manual mode; otherwise autobuild). `--db-cluster` makes one database per language.",
+      "**Step 2, analyze:** `codeql database analyze <db> <suite> --format=sarif-latest --output=results.sarif --sarif-category=<lang>` runs the queries and writes SARIF. `--format` and `--output` are required.",
+      "**Step 3, upload:** `codeql github upload-results --sarif results.sarif`. `--repository`, `--ref` and `--commit` are detected from the checkout if omitted. The token needs `security_events` and comes from `GITHUB_TOKEN` or `--github-auth-stdin`.",
+      "Language ids: `cpp`, `csharp`, `go`, `java` (Kotlin too), `javascript` (TypeScript too), `python`, `ruby`, `swift`, `rust`, `actions`."
+    ],
+    "trap": "A database is a snapshot of one commit. There is no incremental update: run `database create` again for every commit you scan.",
+    "tryIt": "Run `codeql resolve languages` (or `gh codeql resolve languages`) and read the list.",
+    "snippet": { "label": "Three commands, any CI", "code": "codeql database create db --language=javascript --source-root .\ncodeql database analyze db \\\n  codeql/javascript-queries:codeql-suites/javascript-security-extended.qls \\\n  --format=sarif-latest --output=results.sarif --sarif-category=javascript\ncodeql github upload-results --repository=OWNER/REPO \\\n  --ref=refs/heads/main --commit=$(git rev-parse HEAD) --sarif=results.sarif" },
+    "details": [
+      { "title": "database create", "points": [
+        "Flags: `--language` (several only with `--db-cluster`; auto-detected through the GitHub API if omitted), `--source-root` (default `.`), `--command`, `--build-mode` (CLI 2.16.4+).",
+        "More flags: `--threads` (default 1; 0 means one per core), `--overwrite` (replace an existing database; otherwise the command fails if the directory exists), `--no-run-unnecessary-builds`.",
+        "Build mode `none` works for C#, Java, JavaScript/TypeScript, Python and Ruby; `autobuild` or `manual` for C/C++, C#, Go, Java/Kotlin and Swift. Passing `--command` implies manual.",
+        "Builds that happen inside a container must run the CLI inside that container, or the compiler isn't seen.",
+        "Run `codeql pack download codeql/<lang>-queries` once so analyze finds the suite. `codeql resolve qlpacks` lists installed packs; `codeql resolve extractor --language=<id>` finds an extractor."
+      ] },
+      { "title": "database analyze", "points": [
+        "`--format` accepts `sarif-latest`, `sarifv2.1.0`, `csv`, and `graphtext`, `dgml` or `dot` for graph queries. `--output` is required.",
+        "Omit the query argument to run the standard code scanning suite; a pack with no path runs its default suite (`codeql-suites/<lang>-code-scanning.qls`). Suites: `codeql/<lang>-queries:codeql-suites/<lang>-security-extended.qls` and `-security-and-quality.qls`.",
+        "`--sarif-category` becomes `runAutomationDetails.id`, the same role as `category` in Actions. `--sarif-add-baseline-file-info` is recommended (it feeds tool status coverage). `--sarif-include-query-help` is always, custom_queries_only (default) or never; `--sarif-add-query-help` is deprecated.",
+        "`--threads 0` uses every logical processor. `--ram` must be at least 2048 MB. `--max-paths` defaults to 4. `codeql bqrs decode` reads a raw result file.",
+        "Incremental analysis of pull requests (GHES 3.22, GitHub.com) \"can reduce scan times by up to 10x\"."
+      ] },
+      { "title": "github upload-results", "points": [
+        "`--sarif` is the only mandatory flag. `--ref` is `refs/heads/<branch>`, `refs/pulls/<n>/head` or `refs/pulls/<n>/merge`; the ref and commit must exist on GitHub.",
+        "It waits up to 2 minutes for processing and exits non-zero on errors; `--no-wait-for-processing` skips the wait. `--format text` prints a status URL; `json` prints the API response.",
+        "Token: a classic PAT with `security_events` (or `public_repo` for public repos), or a fine-grained token or GitHub App with Code scanning alerts: write. REST equivalent: `POST /repos/{owner}/{repo}/code-scanning/sarifs` with the SARIF gzipped and base64-encoded; 1,000 uploads per hour.",
+        "CLI uploads carry `partialFingerprints`, so alerts aren't duplicated across runs. If the repo uses CodeQL default setup, a CodeQL SARIF upload is rejected: switch default setup off first."
+      ] },
+      { "title": "Packs, bundle, licensing", "points": [
+        "`codeql pack download scope/name[@version]` (or a `.qls`) fetches into the package cache; `--dir` and `--force` control it; `--registries-auth-stdin` takes `<url>=<token>` pairs for GHES registries.",
+        "The CLI is free on public repos. Private use needs an org on Team or Enterprise Cloud with Code Security. It doesn't run on musl-based (Alpine) Linux. Versions can sit side by side.",
+        "On GitHub Enterprise Server the CLI works the same way; an offline server updates the action and bundle with `codeql-action-sync-tool`."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 6 unit 9 walks through exactly these three commands. Expect a question that scrambles their order or their flags.",
+        "`codeql github upload-results` and the `upload-sarif` action end in the same place: the repository's code scanning alerts.",
+        "Module 5: the command form is `codeql [command] [subcommand]`; the CLI finds its packs in sibling directories (the bundle layout); the bundle tarball is cross-platform."
+      ] }
+    ],
+    "lab": "lab-codeql-cli",
+    "sources": ["https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-cli", "https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/scan-from-the-command-line", "https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-cli-manual/database-create", "https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-cli-manual/database-analyze", "https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-cli-manual/github-upload-results", "https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-cli-manual/pack-download", "https://learn.microsoft.com/en-us/training/modules/code-scanning-with-github-codeql/9-use-codeql-cli"] },
+
+  { "id": "l-troubleshoot", "domain": "d4", "objectives": ["d4-3-1"],
+    "title": "Troubleshoot scans", "minutes": 10,
+    "goal": "Fix the common CodeQL failures and speed up slow scans.",
+    "points": [
+      "**No source code was seen during the build** (exit code 32): no supported code, a language detected only from `.h` or `.gyp` files, a failed compile, cached build parts, a build outside init and analyze, or a compiler that wasn't detected.",
+      "For compiled languages, fix it with `build-mode: manual` and run your real build between `init` and `analyze`.",
+      "**More logs:** set `ACTIONS_STEP_DEBUG` to true or re-run with Enable debug logging. Advanced setup can set `debug: true` on init. Artifacts named `debug-artifacts` hold logs, databases, extracted source and SARIF, one per language.",
+      "**Slow scans:** larger runners, a matrix, less code per job, fewer queries, or schedule-only triggers in advanced setup.",
+      "**403 Resource not accessible by integration:** Dependabot-triggered runs are read-only. Use `pull_request` instead of `push` for Dependabot branches, or `branches-ignore: dependabot/**`."
+    ],
+    "trap": "Two slow-scan fixes only work in advanced setup: a matrix and schedule-only triggers.",
+    "tryIt": "Open the Actions run for any CodeQL scan and read the analyze step log.",
+    "details": [
+      { "title": "The troubleshooting pages and their one-line fixes", "table": { "head": ["Symptom", "Fix"], "rows": [
+        ["Alerts found in generated code", "Build only what you want analyzed"],
+        ["Automatic build failed", "Switch to manual build mode and add build steps"],
+        ["C# compiler unexpectedly failing", "Amend the project file"],
+        ["Cannot enable CodeQL in a private repository; error \"GitHub Code Security or GitHub Advanced Security must be enabled\"", "Turn on Code Security"],
+        ["Enabling default setup takes too long", "Restart it"],
+        ["CodeQL scanned fewer lines than expected", "Use a custom build command"],
+        ["Out of disk; Out of memory", "Larger or self-hosted runners"],
+        ["Error \"is not a .ql file, .qls file, a directory, or a query pack specification\"", "The query wasn't located; fix the path or pack"],
+        ["Error \"Server error\"", "Transient; check the Actions status page and rerun"],
+        ["Extraction errors in the database", "Check database health in the logs"],
+        ["Results are different than expected", "Check which configurations are active"],
+        ["Some languages were not analyzed", "Add a language matrix"],
+        ["Two CodeQL workflows", "Default setup disabled the old file and blocks CodeQL API uploads; delete it if unneeded"],
+        ["Unclear what triggered a workflow run", "Check the tool status page"],
+        ["Warning \"git checkout HEAD^2 is no longer necessary\"", "Update the workflow"],
+        ["Warning \"Detected X Kotlin files without a build\"", "Kotlin is skipped in a Java none-build database; use autobuild"],
+        ["SARIF upload rejected because of default setup", "Disable default setup before uploading CodeQL SARIF; third-party SARIF still works"],
+        ["Error 403 \"Resource not accessible by integration\"", "Dependabot runs are read-only; use `pull_request` or ignore `dependabot/**` branches"]
+      ] } },
+      { "title": "No source code seen, in depth", "points": [
+        "Six causes in the docs: no supported language; a language detected from `.h` or `.gyp` files only (set the matrix by hand); compilation failed; cached build components (Gradle, Bazel); compilation outside the init and analyze steps; compiler not detected, for example in a separate container.",
+        "Default setup: if a newly added language's configuration fails, the previous configuration resumes."
+      ] },
+      { "title": "Debugging and performance", "points": [
+        "Debug artifacts are one per language, named from `debug-artifacts`, and contain source code, so treat them as sensitive. Private-registry users also get proxy log artifacts.",
+        "QL performance: predicates and classes become database tables, evaluation is bottom-up, and large predicates are expensive. A slow custom query usually has an unbounded predicate.",
+        "CLI: `--threads 0` uses all logical processors (the default is 1); `--ram` caps memory. In VS Code, the CodeQL Extension Log dropdown shows the logs.",
+        "Actions minutes: a scan that finds no supported language uses none."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors", "https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/no-source-code-seen-during-build", "https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/logs-not-detailed-enough", "https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/analysis-takes-too-long", "https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/resource-not-accessible", "https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/two-codeql-workflows", "https://learn.microsoft.com/en-us/training/modules/codebase-representation-codeql/5-troubleshoot-your-results"] }
+]

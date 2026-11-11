@@ -1,0 +1,15 @@
+{
+  "name": "exam-prep-courses",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Self-contained exam prep courses. Content lives in courses/<id>/, the engine in src/.",
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "build": "node scripts/validate.mjs && node scripts/build.mjs",
+    "preview": "node scripts/build.mjs && node -e \"console.log('Open dist/gh-500/index.html in a browser')\""
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

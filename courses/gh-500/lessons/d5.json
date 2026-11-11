@@ -1,0 +1,132 @@
+[
+  { "id": "l-cve-cwe", "domain": "d5", "objectives": ["d5-0-0", "d5-0-1"],
+    "title": "CVE, CWE, GHSA and advisories", "minutes": 10,
+    "goal": "Use the right identifier, and run a repository advisory from report to publish.",
+    "points": [
+      "**CVE** identifies one disclosed vulnerability. **CWE** is a weakness category (CWE-89 is SQL injection). **GHSA** IDs (`GHSA-xxxx-xxxx-xxxx`) label GitHub advisories.",
+      "**Advisory Database:** reviewed advisories trigger Dependabot alerts; unreviewed ones (from NVD) don't; malware advisories flag malicious packages. Severities: Low, Medium (Moderate), High, Critical, from CVSS 3.1 or 4.0.",
+      "**Repository security advisory** (public repos): draft, collaborate in a temporary private fork, request a CVE, publish. Publishing deletes the fork.",
+      "GitHub is a CNA, so it can assign the CVE (usually reviewed within 72 hours). Owners, admins and security managers can create advisories.",
+      "**Private vulnerability reporting** (Settings > Advanced Security) adds a Report a vulnerability button. `SECURITY.md` explains how to report."
+    ],
+    "trap": "The temporary private fork can't run CI. Test the fix some other way before publishing.",
+    "tryIt": "Open github.com/advisories and search `type:malware`.",
+    "details": [
+      { "title": "Severity bands and identifiers", "table": { "head": ["Band", "Score"], "rows": [
+        ["Critical", "9.0 and above"],
+        ["High", "7.0 to 8.9"],
+        ["Medium (Moderate)", "4.0 to 6.9"],
+        ["Low", "0.1 to 3.9"]
+      ] }, "points": [
+        "GHSA ids are `GHSA-` plus three groups of four characters drawn from `23456789cfghjmpqrvwx`.",
+        "The database supports CVSS 3.1 and 4.0 (imported CVEs may carry 3.0). EPSS (0 to 1, from FIRST, refreshed daily) is shown but not editable.",
+        "Sources: GitHub-reported advisories, NVD, npm, FriendsOfPHP, Go Vulncheck, PyPA, Ruby Advisory, RustSec and community contributions, reviewed by GitHub with machine learning plus human review. Ecosystems: Composer, Erlang, Go, GitHub Actions, Maven, npm, NuGet, pip, Pub, RubyGems, Rust, Swift."
+      ] },
+      { "title": "CWEs the exam likes, with their CodeQL JavaScript query ids", "table": { "head": ["CWE", "Weakness", "Query id"], "rows": [
+        ["CWE-79", "Cross-site scripting", "`js/xss`"],
+        ["CWE-89", "SQL injection", "`js/sql-injection`"],
+        ["CWE-78", "OS command injection", "`js/command-line-injection`"],
+        ["CWE-22", "Path traversal", "`js/path-injection`"],
+        ["CWE-798", "Hard-coded credentials", "(secret scanning territory)"],
+        ["CWE-502", "Unsafe deserialization", "`js/unsafe-deserialization`"],
+        ["CWE-352", "Cross-site request forgery", "`js/missing-token-validation`"],
+        ["CWE-94", "Code injection", "`js/code-injection`"],
+        ["CWE-918", "Server-side request forgery", "`js/request-forgery`"]
+      ] } },
+      { "title": "Repository security advisories, step by step", "points": [
+        "Who can create: repository owners, org owners, security managers and users with the admin role. Anyone with admin on the advisory can add collaborators and request a CVE.",
+        "Requesting a CVE doesn't publish anything. GitHub can't assign one if another CNA already covers the project. After publishing, the CVE goes to MITRE.",
+        "The temporary fork is named `repo-ghsa-xxxx-xxxx-xxxx`. Integrations, including CI, can't access it; branch protection isn't enforced; an admin merges all its open PRs at once when publishing.",
+        "Published advisories keep their URL and stay editable. Add a fixed version first, or Dependabot alerts users with no safe version to move to. A fork triggers alerts only if it owns a uniquely named package.",
+        "A good advisory lists the affected product and versions, severity, patch status and CVE references (module 8)."
+      ] },
+      { "title": "Private vulnerability reporting and the security policy", "points": [
+        "Enable per repo under Settings > Advanced Security, or org-wide through a security configuration (enable, disable, or keep existing). Admins and security managers who watch the repo are notified of new reports.",
+        "Customize the report form with `.github/VULNERABILITY_REPORT.yml` (issue-form syntax); an owner-level default lives in the `.github` repo, and the repo file wins. The default form asks for summary, details, proof of concept and impact.",
+        "`SECURITY.md` may live in the root, `docs` or `.github` folder. Set it up from Security and quality > Reporting > Security policy. It's linked when someone opens an issue, and lists supported versions and how to report.",
+        "Other community health files (module 8): CODE_OF_CONDUCT.md, CONTRIBUTING.md, FUNDING.yml, GOVERNANCE.md, SUPPORT.md, issue and PR templates, discussion category forms."
+      ] },
+      { "title": "End-to-end remediation", "points": [
+        "Dependency flaw: Dependabot alert, then a security update PR or a manual bump, then the alert closes as fixed.",
+        "Code flaw: code scanning alert with its data-flow path, then a fix (optionally Autofix), then the alert closes on the next default-branch scan. Mitigated or Won't fix with a comment if accepting the risk.",
+        "Flaw in your own published package: private report, repository advisory, fix in the temporary fork, request a CVE, publish, and Dependabot tells your downstream users.",
+        "Leaked credential: rotate first, then remove from code, then resolve the alert as Revoked."
+      ] }
+    ],
+    "sources": ["https://docs.github.com/en/code-security/concepts/vulnerability-reporting-and-management/github-advisory-database", "https://docs.github.com/en/code-security/concepts/vulnerability-reporting-and-management/repository-security-advisories", "https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/create-repository-advisory", "https://docs.github.com/en/enterprise-cloud@latest/code-security/tutorials/fix-reported-vulnerabilities/collaborate-in-a-fork", "https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately", "https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/add-security-policy", "https://docs.github.com/en/code-security/reference/code-scanning/sarif-files/sarif-support", "https://codeql.github.com/codeql-query-help/javascript/"] },
+
+  { "id": "l-campaigns", "domain": "d5", "objectives": ["d1-1-3", "d3-1-2", "d5-1-1", "d5-3-1"],
+    "title": "Security campaigns", "minutes": 10,
+    "goal": "Use a campaign to burn down an existing backlog of alerts across many repos.",
+    "points": [
+      "A campaign groups existing alerts across repos, with a due date and campaign managers, so developers fix them together.",
+      "**Alert types:** code scanning (default branch only) and secret scanning (public preview). Dependabot alerts aren't campaign alerts; fix those with Dependabot PRs.",
+      "**Who:** org owners and security managers create campaigns, and campaign managers must be owners or security managers (users or teams).",
+      "**Limits:** up to 1,000 alerts per campaign and 10 active campaigns. Start from a template (Code or Secrets) or from code scanning or secret scanning filters.",
+      "Copilot Autofix suggests fixes for code alerts automatically. Code campaigns can create tracking issues in each repo."
+    ],
+    "trap": "Campaigns fix alerts that already exist. To stop new ones, use rulesets, push protection or dependency review.",
+    "tryIt": "Pick one CWE your team sees often and name the filter you'd start a campaign from.",
+    "details": [
+      { "title": "Creating a campaign", "points": [
+        "Path: org Security and quality tab > Campaigns > Create campaign > From template (Code or Secrets), From code scanning filters, or From secret scanning filters. Finish with Save as Draft campaign or Publish campaign.",
+        "Fields: Campaign name, Short description, Campaign due date, Campaign managers, optional Contact link, and for code campaigns **Create issues for NUMBER repositories in this campaign**.",
+        "Every filter includes `is:open`; code campaigns add `autofilter:true` and the default branch; templates add `autofix:supported` while agentic autofix is off. The one template the docs name is Cross-site scripting (CWE-79).",
+        "REST: `GET` and `POST /orgs/{org}/campaigns`; `GET`, `PATCH` and `DELETE /orgs/{org}/campaigns/{campaign_number}`. The body takes `name`, `description`, `managers`, `ends_at`, `code_scanning_alerts`. The caller must be an org owner or security manager, and the API only works with published campaigns."
+      ] },
+      { "title": "Who sees it, and how fixes arrive", "points": [
+        "Code campaigns notify everyone with write access to the included repos; secret campaigns notify anyone who can see the alert list. The campaign appears in each repo's Security and quality sidebar.",
+        "Code alerts are submitted to Copilot Autofix automatically as capacity allows (most within an hour). With agentic autofix on, the autofix filter disappears and **Assign to Copilot** appears: up to 25 alerts per assignment, one agent session, one draft PR.",
+        "Secret scanning campaigns (public preview): no tracking issues, no Autofix. Assigning a user who can't see the alert list raises their permission temporarily for that alert; the bypass filter is enterprise-only.",
+        "Tracking statuses: Open, In progress (code only: a branch or PR was created from the campaign), Fixed, Dismissed. The campaign page shows progress, status against the due date, and the Copilot Autofix count."
+      ] },
+      { "title": "Licensing and where it fits", "points": [
+        "Campaigns come with either product (Secret Protection or Code Security) on Team or Enterprise. The training's module 7 lists them under Code Security only.",
+        "Campaigns are the remediation-at-scale tool in the objectives: prioritize a backlog by CWE, severity or age, give it an owner and a date, and let Autofix do the first draft.",
+        "Prevention sits elsewhere: push protection, dependency review and rulesets stop new alerts. Security configurations enable features at scale. Campaigns clear what's already there."
+      ] }
+    ],
+    "lab": "lab-campaign",
+    "sources": ["https://docs.github.com/en/code-security/concepts/security-at-scale/about-security-campaigns", "https://docs.github.com/en/code-security/how-tos/manage-security-alerts/remediate-alerts-at-scale/creating-managing-security-campaigns", "https://docs.github.com/en/code-security/how-tos/manage-security-alerts/remediate-alerts-at-scale/tracking-security-campaigns", "https://docs.github.com/en/rest/campaigns/campaigns"] },
+
+  { "id": "l-rulesets", "domain": "d5", "objectives": ["d5-1-0", "d5-3-2", "d6-2-0"],
+    "title": "Rulesets that enforce security", "minutes": 10,
+    "goal": "Use rulesets to block merges that add security alerts.",
+    "points": [
+      "Branch rulesets can **Require code scanning results** from named tools such as CodeQL. The REST rule type is `code_scanning`.",
+      "Thresholds: **Alerts** (None, Errors, Errors and Warnings, All) and **Security alerts** (None, Critical, High or higher, Medium or higher, All).",
+      "Merge is blocked when a required tool finds an alert at the threshold, is still running, or isn't configured. It isn't a status check.",
+      "Rulesets can also require status checks (dependency review), required workflows (org level), reviews and signed commits, with a bypass list for exceptions.",
+      "Rulesets exist at repo, org (Team and Enterprise plans) and enterprise level. The most restrictive rule across all applicable rulesets wins."
+    ],
+    "trap": "Code scanning merge protection is a ruleset rule, not a status check.",
+    "tryIt": "Open **Settings > Rules > Rulesets** on a repo and find Require code scanning results.",
+    "details": [
+      { "title": "Types, enforcement and bypass", "points": [
+        "Types: **branch**, **tag** and **push** rulesets. Enforcement: Active, Disabled (the default in the merge-protection flow), and Evaluate, which tests rules \"without impacting contributors\" and records what would have been blocked.",
+        "Bypass actors: repository admins, org owners, enterprise owners, Maintain or Write roles (and write-based custom roles), teams (not secret teams), GitHub Apps, Dependabot. Modes: Always allow (default) or For pull requests only.",
+        "Limits: 75 rulesets per repository and 75 org-wide. There's no priority: the strictest rule wins across rulesets and branch protection. Anyone with read access can view active rulesets.",
+        "Rulesets can be imported from JSON (New ruleset > Import a ruleset). Rule insights show which pushes and PRs were blocked or bypassed."
+      ] },
+      { "title": "Rules worth knowing", "points": [
+        "On by default: Restrict deletions and Block force pushes. Require linear history needs squash or rebase merges allowed. Required status checks has a Strict option, \"Require branches to be up to date before merging\".",
+        "Push rulesets: Restrict file paths and Restrict file extensions take up to 200 entries of 200 characters; path rules accept Allowed exceptions, extension rules don't; path length and file size are numbers you set.",
+        "Push rules apply to every push in private and internal repos and across the whole fork network, where only bypassers from the root repo can bypass.",
+        "Security rules besides code scanning: Require secret scanning alerts are resolved (public preview), Require code quality results, Require license compliance results, Restrict code coverage.",
+        "**Require workflows to pass** is org or enterprise level only: the workflow repo must match the target's visibility, triggers are `pull_request`, `pull_request_target` and `merge_group`, and CodeQL actions are disallowed except `upload-sarif`. An org can require the dependency review action this way.",
+        "Enterprise-only rules: restrict commit metadata, branch names and tag names. Merge queue and Require deployments to succeed aren't available at org level."
+      ] },
+      { "title": "Code scanning merge protection", "points": [
+        "Path: ruleset > Branch protections > Require code scanning results > Add tool (for example CodeQL), then set the Alerts and Security alerts thresholds.",
+        "It doesn't apply to merge queue groups or to Dependabot PRs analyzed by default setup. It waits for an in-progress analysis before deciding.",
+        "Blocking a merge is the gate; a failing check on the PR is only advisory until a ruleset requires it."
+      ] },
+      { "title": "If the question follows the training", "points": [
+        "Module 8 compares rulesets with branch protection: several rulesets can coexist, you can enable, disable or evaluate one without deleting it, and anyone with read access can see them. All applicable rules aggregate and the strictest wins (its example: 3 reviews, signed commits, linear history).",
+        "Module 8's rules list: require status checks (CodeQL, Dependency Review), signed commits, block force pushes and deletions, restrict push and merge; tag rules can be imported.",
+        "Module 8's control levels: low (optional reviews), moderate (required branch protection, commit signing, webhooks), high (SAML SSO plus 2FA, restricted visibility and forking, mandatory approvals, no force push)."
+      ] }
+    ],
+    "lab": "lab-dep-review",
+    "sources": ["https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/manage-your-configuration/set-merge-protection", "https://docs.github.com/en/code-security/concepts/code-scanning/merge-protection", "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets", "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets", "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository", "https://learn.microsoft.com/en-us/training/modules/manage-sensitive-data-security-policies/3-scrub-sensitive-data-from-repository"] }
+]
