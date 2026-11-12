@@ -1,8 +1,8 @@
 {
-  "name": "exam-prep-courses",
+  "name": "studycore",
   "version": "0.2.0",
   "private": true,
-  "description": "Self-contained exam prep courses. Content lives in courses/<id>/, the engine in src/.",
+  "description": "Studycore: exam prep courses. Content lives in courses/<id>/, the engine in src/.",
   "license": "MIT",
   "type": "module",
   "scripts": {

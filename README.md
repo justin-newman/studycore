@@ -1,12 +1,14 @@
-# GH-500 exam prep course
+# Studycore
 
-An interactive study course for the **GH-500: GitHub Advanced Security** certification exam. It covers lessons, hands-on labs, practice questions, timed mock exams and a week-by-week study plan, all built into a single HTML file that runs in any browser.
+Interactive exam prep courses: lessons, hands-on labs, practice questions, timed mock exams and a week-by-week study plan. Each course is a folder of JSON content; one engine runs them all.
+
+The first course is **GH-500: GitHub Advanced Security**. More certification courses will follow on the same engine.
 
 ## Who it's for
 
-People preparing for GH-500 who want a structured plan instead of a pile of links. I built it to prepare for the exam myself. Lessons put a short core first (a goal, a few key points, an exam trap, a two-minute action) and keep the full detail in a collapsible section underneath, so the course works for short, focused study sessions.
+People preparing for a certification exam who want a structured plan instead of a pile of links. I built it to prepare for GH-500 myself. Lessons put a short core first (a goal, a few key points, an exam trap, a two-minute action) and keep the full detail in a collapsible section underneath, so the courses work for short, focused study sessions.
 
-## What's in it
+## What's in the GH-500 course
 
 | Part | Count |
 | --- | --- |
@@ -31,8 +33,8 @@ Every lesson and question cites at least one source (GitHub Docs, Microsoft Lear
 Needs Node.js 20.19 or newer.
 
 ```sh
-git clone https://github.com/justin-newman/gh500-course.git
-cd gh500-course
+git clone https://github.com/justin-newman/studycore.git
+cd studycore
 npm install
 npm run dev
 ```
@@ -100,7 +102,7 @@ These are guidelines and only print warnings: at most 5 key points per lesson, a
 
 ## Roadmap
 
-Planned work is in [`docs/ROADMAP.md`](docs/ROADMAP.md) and the [roadmap issues](https://github.com/justin-newman/gh500-course/issues?q=is%3Aissue+label%3Aroadmap): hosting the course, research into how to make studying easier, research into where the correct information comes from and how to keep it current, a self-healing question pipeline ([`docs/SELF-HEALING.md`](docs/SELF-HEALING.md)), and more courses on the same engine.
+Planned work is in [`docs/ROADMAP.md`](docs/ROADMAP.md) and the [roadmap issues](https://github.com/justin-newman/studycore/issues?q=is%3Aissue+label%3Aroadmap): hosting the course, research into how to make studying easier, research into where the correct information comes from and how to keep it current, a self-healing question pipeline ([`docs/SELF-HEALING.md`](docs/SELF-HEALING.md)), and more courses on the same engine.
 
 ## License
 

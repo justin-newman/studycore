@@ -1,6 +1,6 @@
 # Roadmap
 
-The repo is public at https://github.com/justin-newman/gh500-course. Each item below has a GitHub issue labeled `roadmap`.
+The repo is public at https://github.com/justin-newman/studycore. Each item below has a GitHub issue labeled `roadmap`.
 
 ## Where the PoC stands
 
