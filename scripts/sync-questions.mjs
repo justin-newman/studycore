@@ -32,7 +32,7 @@ for (const q of questions) {
   if (!ok) fail(`Question ${q.id || "(no id)"} is missing fields; run npm run validate first.`);
 }
 
-// New secret keys (sb_secret_...) go in the apikey header only; legacy service_role JWTs also need Authorization.
+// New secret keys (starting sb_secret_) go in the apikey header only; legacy service_role JWTs also need Authorization.
 const headers = { apikey: key, "Content-Type": "application/json" };
 if (key.startsWith("eyJ")) headers.Authorization = `Bearer ${key}`;
 
