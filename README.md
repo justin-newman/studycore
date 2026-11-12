@@ -4,6 +4,8 @@ Interactive exam prep courses: lessons, hands-on labs, practice questions, timed
 
 The first course is **GH-500: GitHub Advanced Security**. More certification courses will follow on the same engine.
 
+**Try it:** https://studycore-nu.vercel.app
+
 ## Who it's for
 
 People preparing for a certification exam who want a structured plan instead of a pile of links. I built it to prepare for GH-500 myself. Lessons put a short core first (a goal, a few key points, an exam trap, a two-minute action) and keep the full detail in a collapsible section underneath, so the courses work for short, focused study sessions.
