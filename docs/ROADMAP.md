@@ -53,7 +53,3 @@ See `docs/SELF-HEALING.md`. About 2 days once Phase 1 exists. The triage agent c
 1. Close the validator's guideline warnings (lessons with fewer than 2 questions, a lab over 5 steps).
 2. Recheck dated facts after their dates pass, such as the sync SBOM endpoint retiring 2026-11-13.
 3. Keep the study plan usable after its fixed dates (the current plan ends 2026-11-20).
-
-## Later: paid access (parked)
-
-Not planned yet. When it starts: sign-in, checkout and per-course entitlements. Decide then how to handle content already public in this repo: keep the GH-500 bank free, or put new and paid content in a private repo.
