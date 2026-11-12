@@ -20,35 +20,45 @@ Every lesson and question cites at least one source (GitHub Docs, Microsoft Lear
 
 ## Built with
 
-- Plain JavaScript, HTML and CSS. No framework and no runtime dependencies.
-- Node.js (20 or newer) scripts for validation and the build. No npm packages to install.
+- Plain JavaScript, HTML and CSS. No UI framework and no runtime dependencies.
+- [Vite](https://vite.dev) for the dev server and the production build.
+- Node.js scripts for the content validator and the Claude artifact build.
 - Course content as JSON, so a new exam is a new folder of data and the engine doesn't change.
-- GitHub Actions runs the content validator on every push and pull request.
+- GitHub Actions runs the validator and both builds on every push and pull request. Vercel hosts the site.
 
 ## Run it
+
+Needs Node.js 20.19 or newer.
 
 ```sh
 git clone https://github.com/justin-newman/gh500-course.git
 cd gh500-course
-npm run build
+npm install
+npm run dev
 ```
 
-Then open `dist/gh-500/index.html` in a browser. The build prints a summary starting with `OK gh-500: 32 lessons`, followed by any guideline warnings.
+Then open the local address Vite prints (usually http://localhost:5173). Edits to the engine or the course JSON reload the page.
 
 | Command | What it does |
 | --- | --- |
-| `npm run validate` | Checks the content only |
-| `npm run build` | Validates, then writes `dist/gh-500/index.html` (hostable) and `dist/gh-500/artifact.html` (Claude artifact version) |
-| `node scripts/build.mjs <course-id>` | Builds a different course folder |
+| `npm run dev` | Starts the dev server |
+| `npm run validate` | Checks the content only. Prints a summary starting with `OK gh-500: 32 lessons`, followed by any guideline warnings. |
+| `npm run build` | Validates, then builds the hostable site into `dist/` |
+| `npm run preview` | Serves the `dist/` build locally |
+| `npm run build:artifact` | Validates, then writes `dist-artifact/gh-500/artifact.html`, a single-file version for publishing as a Claude artifact |
+| `COURSE=<id> npm run build` | Builds a different course folder |
 
 ## Layout
 
 | Path | What it holds |
 | --- | --- |
 | `courses/<id>/` | One course's content as JSON |
-| `src/` | The engine: `template.html`, `styles.css`, `app.js` |
+| `index.html` | Vite entry page; the head and body come from `src/template.html` |
+| `src/` | The engine: `template.html`, `styles.css`, `app.js`, plus the Vite entry `main.js` |
+| `vite.config.js` | Loads the course into the build as `virtual:course-data` |
+| `scripts/course.mjs` | Reads a course folder; shared by both builds |
 | `scripts/validate.mjs` | The content gate (runs in CI) |
-| `scripts/build.mjs` | The build |
+| `scripts/build-artifact.mjs` | The Claude artifact build |
 | `docs/` | Roadmap and the self-healing question pipeline design |
 
 ## Course files

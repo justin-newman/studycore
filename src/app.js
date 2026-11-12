@@ -2,7 +2,8 @@
   "use strict";
 
   /* ================= Data ================= */
-  const DATA = JSON.parse(document.getElementById("course-data").textContent);
+  // Vite build: set by src/course-data.js. Claude artifact build: an inline JSON script tag.
+  const DATA = window.COURSE_DATA || JSON.parse(document.getElementById("course-data").textContent);
   const COURSE = DATA.course, LESSONS = DATA.lessons, QUESTIONS = DATA.questions, LABS = DATA.labs, PLAN = DATA.plan, REF = DATA.reference, BUILD = DATA.build;
   const EXAM = COURSE.exam;
   const DOMAINS = COURSE.domains;

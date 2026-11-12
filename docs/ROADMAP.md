@@ -14,9 +14,9 @@ The repo is public at https://github.com/justin-newman/gh500-course. Each item b
 
 ## Phase 1: host it (about 1 day)
 
-1. Deploy `dist/gh-500/index.html` to a static host (GitHub Pages first; Azure Static Web Apps or Cloudflare Pages later if needed).
-2. Add a tiny API (one serverless function) with two routes: `POST /progress` and `POST /feedback`.
-3. Swap the browser-only adapters in `src/app.js` (`connect`, `flushFeedback`) for calls to that API.
+1. Deploy the Vite build to Vercel, connected to this repo so every push to `main` redeploys.
+2. Add a Supabase database for anonymous progress and question reports.
+3. Swap the browser-only adapters in `src/app.js` (`connect`, `flushFeedback`) for calls to Supabase.
 
 ## Phase 2: research how to make studying easier
 
@@ -46,7 +46,7 @@ See `docs/SELF-HEALING.md`. About 2 days once Phase 1 exists. The triage agent c
 
 1. Copy `courses/gh-500` to `courses/<new-id>`.
 2. Replace the content. The validator tells you what's missing.
-3. Build with `node scripts/build.mjs <new-id>`.
+3. Build with `COURSE=<new-id> npm run build`.
 
 ## Ongoing: content upkeep
 
