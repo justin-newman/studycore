@@ -1,11 +1,13 @@
 // Pushes a course's question bank into Supabase: the public part to `questions`,
 // answers, explanations and sources to `question_keys` (never readable from the browser).
 //
-// Usage: node scripts/sync-questions.mjs <course-id> [path/to/questions.json] [--prune]
+// Usage: npm run sync:questions -- <course-id> [path/to/questions.json] [--prune]
 //   --prune  also deletes questions in the database that are no longer in the file
 //
 // Reads VITE_SUPABASE_URL and SUPABASE_SECRET_KEY from .env. The secret key bypasses
-// row level security, so it stays on your machine and is never printed.
+// row level security, so it is never printed. In .env it can be a 1Password secret
+// reference (op://vault/item/field); the npm script runs this file through `op run`,
+// which fills the real value in for this one process only.
 import { readFileSync, existsSync } from "node:fs";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -18,6 +20,7 @@ const key = process.env.SUPABASE_SECRET_KEY;
 const fail = msg => { console.error(msg); process.exit(1); };
 if (!course) fail("Usage: node scripts/sync-questions.mjs <course-id> [path/to/questions.json] [--prune]");
 if (!url || !key) fail("Set VITE_SUPABASE_URL and SUPABASE_SECRET_KEY in .env (see .env.example).");
+if (key.startsWith("op://")) fail("SUPABASE_SECRET_KEY is a 1Password reference. Run npm run sync:questions, which resolves it with op run.");
 if (!existsSync(file)) fail(`No question file at ${file}`);
 
 const questions = JSON.parse(readFileSync(file, "utf8"));

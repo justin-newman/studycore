@@ -86,6 +86,27 @@ The validator fails the build on these:
 
 These are guidelines and only print warnings: at most 5 key points per lesson, at most 5 steps per lab, at least 2 questions per lesson.
 
+## Database
+
+The hosted site uses [Supabase](https://supabase.com). The schema is in `supabase/migrations/`.
+
+| Table | Who can read it |
+| --- | --- |
+| `questions` | Any visitor with a session: question text, options and how many to pick |
+| `question_keys` | Nobody from the browser. Answers come back only through the `check_answers` function, after a visitor answers. |
+| `progress` | Each visitor, their own row only |
+| `reports` | Visitors can file reports but not read them; the owner reviews them in the dashboard |
+
+Visitors get an anonymous session automatically: no sign-in screen, no email, no name.
+
+To push question changes to the database, copy `.env.example` to `.env`, fill it in, then run:
+
+```sh
+npm run sync:questions -- gh-500
+```
+
+`SUPABASE_SECRET_KEY` in `.env` is a [1Password secret reference](https://developer.1password.com/docs/cli/secret-references/), not the key itself; the script runs through `op run`, which needs the [1Password CLI](https://developer.1password.com/docs/cli/get-started/).
+
 ## Change a question
 
 1. Edit it in `courses/gh-500/questions.json`.

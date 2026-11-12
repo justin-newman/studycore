@@ -11,7 +11,7 @@
     "build": "node scripts/validate.mjs && vite build",
     "build:artifact": "node scripts/validate.mjs && node scripts/build-artifact.mjs",
     "preview": "vite preview",
-    "sync:questions": "node scripts/sync-questions.mjs"
+    "sync:questions": "op run --env-file=.env -- node scripts/sync-questions.mjs"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
