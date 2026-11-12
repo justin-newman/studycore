@@ -6,7 +6,8 @@ The repo is public at https://github.com/justin-newman/studycore. Each item belo
 
 | Works now | Not built yet |
 | --- | --- |
-| One course (GH-500) as data; engine is course-agnostic | The app reading from and saving to Supabase |
+| One course (GH-500) as data; engine is course-agnostic | The app rewritten in Vue and TypeScript |
+| Plain JavaScript app built with Vite | The app reading from and saving to Supabase |
 | Lessons, labs, drills, timed mock exams, study plan, self-ratings | A private home for the question bank |
 | Live on Vercel (https://studycore-nu.vercel.app), redeployed on every push to `main` | Automated tests for the database rules |
 | Supabase schema: questions readable with an anonymous session, answer keys locked behind `check_answers` | The agent that triages reports |
@@ -17,7 +18,17 @@ The repo is public at https://github.com/justin-newman/studycore. Each item belo
 
 Done: Vite build, Vercel hosting (#1), Supabase schema and access rules, the question bank synced and verified, and the access rules tested from outside.
 
-### 1.1 Connect the app to Supabase (#2)
+### 1.1 Rewrite the app in Vue and TypeScript (#12)
+
+Comes first, so the Supabase work in 1.2 is written once, in Vue.
+
+1. Add Vue 3 and TypeScript to the existing Vite setup, with type checking in `npm run build` and CI.
+2. Add types for the course data and the saved progress.
+3. Rebuild each screen as a component (Today, Learn, lessons, Practice, Labs, Plan, Progress, Reference), with Vue Router keeping links like `#practice` working.
+4. Keep the same browser storage keys, so progress saved before the switch still loads.
+5. Drop the Claude artifact build and "Fresh from Claude", which only work inside claude.ai (1.4 covers the rest of the artifact).
+
+### 1.2 Connect the app to Supabase (#2)
 
 1. Add the Supabase URL and publishable key to Vercel as environment variables.
 2. Start an anonymous session when the page opens. No sign-in screen, no email, no name.
@@ -25,20 +36,20 @@ Done: Vite build, Vercel hosting (#1), Supabase schema and access rules, the que
 4. Save progress and question reports to Supabase, keeping the browser copy as a backup and an offline queue.
 5. Show a clear message when questions can't load, and add a "don't include personal information" hint to the report box.
 
-### 1.2 Move the question bank to a private repo (#8)
+### 1.3 Move the question bank to a private repo (#8)
 
 1. Create a private `studycore-content` repo holding each course's `questions.json`.
 2. Run the question checks (count, domain weights, sources) there, and keep the lesson checks here.
 3. Sync to Supabase when a change merges, with the secret key coming from 1Password or a GitHub Actions secret.
 4. Remove `questions.json` from this repo, so neither the repo nor the built site carries the answer keys.
 
-### 1.3 Retire the Claude artifact (#9)
+### 1.4 Retire the Claude artifact (#9)
 
 1. Confirm the hosted site covers what the artifact did (saved progress, reports).
-2. Remove `build:artifact`, `scripts/build-artifact.mjs` and the claude.ai-only code in `src/app.js`.
+2. Unpublish or replace the old artifact page (the artifact build itself goes away in 1.1).
 3. Decide whether "Fresh from Claude" comes back later through a server-side call.
 
-### 1.4 Test and harden the database (#10, #11)
+### 1.5 Test and harden the database (#10, #11)
 
 1. Turn the manual access check into an automated test: no session sees nothing, a session sees questions but never answers, viewers only touch their own rows.
 2. Test `check_answers`, including multi-select answers in any order.
@@ -67,7 +78,7 @@ Deep research into which sources to trust, how to settle conflicts between them,
 
 ## Phase 4: self-healing questions
 
-See `docs/SELF-HEALING.md`. About 2 days once Phase 1.1 exists. The triage agent checks reports against the source policy from Phase 3.
+See `docs/SELF-HEALING.md`. About 2 days once Phase 1.2 exists. The triage agent checks reports against the source policy from Phase 3.
 
 ## Phase 5: more courses
 
